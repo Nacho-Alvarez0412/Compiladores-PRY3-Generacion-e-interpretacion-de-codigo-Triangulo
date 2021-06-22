@@ -1032,7 +1032,7 @@ public final class Encoder implements Visitor {
   }
   
   public Object visitSimpleLongIdentifier(SimpleLongIdentifier ast, Object o) {
-    return null;
+    return ast.I.visit(this, o);
   }
     
   public Object visitPackageLongIdentifier(PackageLongIdentifier ast, Object o) {

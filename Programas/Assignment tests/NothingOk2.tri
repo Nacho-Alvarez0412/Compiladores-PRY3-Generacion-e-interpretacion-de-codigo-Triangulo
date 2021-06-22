@@ -1,6 +1,7 @@
 if 1>2 then
-	put('a');
+	putint(2);
 	nothing
 else
-	putint(9)
+	putint(9);
+	nothing
 end
