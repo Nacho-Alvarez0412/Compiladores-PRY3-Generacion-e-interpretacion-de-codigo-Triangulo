@@ -1,1 +1,6 @@
-nothing ; nothing ! dos nothing en secuencia constituyen un programa válido 
+if 1>2 then
+	put('a');
+	nothing
+else
+	putint(9)
+end

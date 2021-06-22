@@ -616,7 +616,7 @@ public class Main extends javax.swing.JFrame {
             output.setDelegate(delegateConsole);            
             if (compiler.compileProgram(desktopPane.getSelectedFrame().getTitle())) {           
                 output.setDelegate(delegateTAMCode);
-                //disassembler.Disassemble(desktopPane.getSelectedFrame().getTitle().replace(".tri", ".tam"));
+                disassembler.Disassemble(desktopPane.getSelectedFrame().getTitle().replace(".tri", ".tam"));
                 // @author        Andres
                 // @descripcion   Determinar que tipo de Program parsear
                 // @funcionalidad Parsear Program
@@ -631,10 +631,24 @@ public class Main extends javax.swing.JFrame {
                 */
                 // END CAMBIO Andres
                 
-                //((FileFrame)desktopPane.getSelectedFrame()).setTable(tableVisitor.getTable(compiler.getAST()));
+                // @author        Andres
+                // @descripcion   Conectar table visitor
+                // @funcionalidad Table Details display
+                // @codigo        A.1
+                if (compiler.getIsSimpleProgram()) {
+                    ((FileFrame)desktopPane.getSelectedFrame()).setTable(tableVisitor.getTable(compiler.getSimpleProgram()));
+                } else {
+                     ((FileFrame)desktopPane.getSelectedFrame()).setTable(tableVisitor.getTable(compiler.getCompoundProgram()));
+                }
+                // END CAMBIO Andres
                 
-                runMenuItem.setEnabled(false);
-                buttonRun.setEnabled(false);
+                // @author        Andres
+                // @descripcion   Habilitar boton de ejecucion
+                // @funcionalidad Ejecucion
+                // @codigo        A.4
+                runMenuItem.setEnabled(true);
+                buttonRun.setEnabled(true);
+                // END CAMBIO Andres
             } else {
                 ((FileFrame)desktopPane.getSelectedFrame()).highlightError(compiler.getErrorPosition());
                 runMenuItem.setEnabled(false);
