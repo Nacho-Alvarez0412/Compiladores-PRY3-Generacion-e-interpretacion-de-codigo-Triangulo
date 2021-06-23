@@ -131,6 +131,7 @@ import Triangle.AbstractSyntaxTrees.SinglePackageDeclaration;
 import Triangle.AbstractSyntaxTrees.SequentialPackageDeclaration;
 import Triangle.AbstractSyntaxTrees.SimpleProgram;
 import Triangle.AbstractSyntaxTrees.CompoundProgram;
+import java.util.ArrayList;
 /* J.13
 import Triangle.AbstractSyntaxTrees.WhileCommand;
 import Triangle.AbstractSyntaxTrees.VarDeclaration;
@@ -153,7 +154,38 @@ public final class Encoder implements Visitor {
   // @funcionalidad Cambio en las alternativas de single-command
   // @codigo        A.22
   public Object visitCompoundIfCommand(CompoundIfCommand ast, Object o) {
-      return null;
+    Frame frame = (Frame) o;
+    int jumpifAddr, jumpAddr;
+    
+    // Evaluate if expression
+    Integer valSize = (Integer) ast.E.visit(this, frame);
+    jumpifAddr = nextInstrAddr;
+    // Jump to next elsif instruction
+    emit(Machine.JUMPIFop, Machine.falseRep, Machine.CBr, 0);
+    // Execute if command
+    ast.C1.visit(this, frame);
+    // Addr to jump to halt
+    jumpAddr = nextInstrAddr;
+    emit(Machine.JUMPop, 0, Machine.CBr, 0);
+    patch(jumpifAddr, nextInstrAddr);
+    // Point JUMP addr from if to the addr of the first elsif
+    Object elsifJumpAddrs = ast.EIC.visit(this, frame);
+    ast.C2.visit(this, frame);
+    // Point the jump address of the if to the next instruction
+    // after the if
+    patch(jumpAddr, nextInstrAddr);
+    // Check if single address or set of addresses
+    if (elsifJumpAddrs instanceof Integer) {
+        patch((Integer) elsifJumpAddrs, nextInstrAddr);
+    } else {
+        ArrayList<Integer> addrs = (ArrayList<Integer>) elsifJumpAddrs;
+          // Update the jumps of the elsifs
+        for (int addr : addrs) {
+            patch(addr, nextInstrAddr);
+        }
+    }
+  
+    return null;
   }
   
   // @author        Andres
@@ -161,7 +193,18 @@ public final class Encoder implements Visitor {
   // @funcionalidad AST SingleElsifCommand
   // @codigo        A.16
   public Object visitSingleElsifCommand(SingleElsifCommand ast, Object o) {
-      return null;
+    Frame frame = (Frame) o;
+    int jumpifAddr, jumpAddr;
+    
+    Integer valSize = (Integer) ast.E.visit(this, frame);
+    jumpifAddr = nextInstrAddr;
+    emit(Machine.JUMPIFop, Machine.falseRep, Machine.CBr, 0);
+    ast.C.visit(this, frame);
+    jumpAddr = nextInstrAddr;
+    emit(Machine.JUMPop, 0, Machine.CBr, 0);
+    patch(jumpifAddr, nextInstrAddr);
+    
+    return jumpAddr;
   }
   // END cambio Andres
   
@@ -170,7 +213,18 @@ public final class Encoder implements Visitor {
   // @funcionalidad AST SequentialElsifCommand
   // @codigo        A.17
   public Object visitSequentialElsifCommand(SequentialElsifCommand ast, Object o) {
-      return null;
+      Frame frame = (Frame) o;
+      ArrayList<Integer> jumpAddrs = new ArrayList<Integer>();
+      // Append an ArrayList of Integer if it is sequential
+      if (ast.SE1 instanceof SingleElsifCommand) {
+          jumpAddrs.add((Integer) ast.SE1.visit(this, frame));
+      } else if (ast.SE2 instanceof SequentialElsifCommand) {
+          jumpAddrs.addAll((ArrayList<Integer>) ast.SE1.visit(this, frame));
+      }
+      int elsif2JumpAddr = (Integer) ast.SE2.visit(this, frame);
+      jumpAddrs.add(elsif2JumpAddr);
+      
+      return jumpAddrs;
   }
   // END cambio Andres
   

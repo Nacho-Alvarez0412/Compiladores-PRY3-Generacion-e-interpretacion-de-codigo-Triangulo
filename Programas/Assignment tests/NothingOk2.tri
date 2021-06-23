@@ -1,6 +1,7 @@
 if 1>2 then
-	putint(2);
-	nothing
+	putint(2)
+elsif 3=5 then
+	putint(32)
 else
 	putint(9);
 	nothing
