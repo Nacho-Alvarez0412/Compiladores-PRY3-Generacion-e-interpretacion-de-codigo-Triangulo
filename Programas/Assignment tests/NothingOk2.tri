@@ -1,1 +1,7 @@
-nothing ; nothing ! dos nothing en secuencia constituyen un programa válido 
+if 1>2 then
+	putint(2);
+	nothing
+else
+	putint(9);
+	nothing
+end
