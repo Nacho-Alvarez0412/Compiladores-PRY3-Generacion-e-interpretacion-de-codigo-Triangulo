@@ -131,6 +131,7 @@ import Triangle.AbstractSyntaxTrees.SinglePackageDeclaration;
 import Triangle.AbstractSyntaxTrees.SequentialPackageDeclaration;
 import Triangle.AbstractSyntaxTrees.SimpleProgram;
 import Triangle.AbstractSyntaxTrees.CompoundProgram;
+import Triangle.AbstractSyntaxTrees.VarName;
 /* J.13
 import Triangle.AbstractSyntaxTrees.WhileCommand;
 import Triangle.AbstractSyntaxTrees.VarDeclaration;
@@ -221,6 +222,8 @@ public final class Encoder implements Visitor {
     ast.C.visit(this, new Frame(frame, extraSize));
     if (extraSize > 0)
       emit(Machine.POPop, 0, 0, extraSize);
+
+    
     return null;
   }
 
@@ -313,7 +316,20 @@ public final class Encoder implements Visitor {
   }
   
   public Object visitVarExpDeclaration(VarExpDeclaration ast, Object o) {
-      return null;
+    Frame frame = (Frame) o;
+    int extraSize;
+    extraSize = ((Integer)ast.T.visit(this, null));
+    emit(Machine.PUSHop, 0, 0, extraSize);
+    ast.entity = new KnownAddress(Machine.addressSize, frame.level, frame.size);
+    writeTableDetails(ast); 
+    
+    Integer valSize = (Integer) ast.E.visit(this, frame);
+    Identifier id = new Identifier(ast.I.spelling,ast.position);
+    id.decl = ast;
+    SimpleVname vn = new SimpleVname(new SimpleVarName(id,ast.position),ast.position);
+    encodeStore(vn, new Frame (frame, valSize), valSize);
+    
+    return extraSize;
   }
   
   public Object visitRecDeclaration(RecDeclaration ast, Object o) {
@@ -1020,7 +1036,7 @@ public final class Encoder implements Visitor {
   }
   
   public Object visitSimpleVname(SimpleVname ast, Object o) {
-      return null;
+      return ast.VN.visit(this, o);
   }
   
   public Object visitPackageIdentifier(PackageIdentifier ast, Object o) {
@@ -1028,7 +1044,7 @@ public final class Encoder implements Visitor {
   }
   
   public Object visitPackageVname(PackageVname ast, Object o) {
-      return null;
+      return ast.VN.visit(this, o);
   }
   
   public Object visitSimpleLongIdentifier(SimpleLongIdentifier ast, Object o) {
@@ -1319,6 +1335,8 @@ public final class Encoder implements Visitor {
       emit(Machine.STOREIop, valSize, 0, 0);
     }
   }
+  
+
 
   // Generates code to fetch the value of a named constant or variable
   // and push it on to the stack.

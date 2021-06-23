@@ -1,8 +1,13 @@
 
 let
-  var n := 1
+
+  var n : Integer;
+  var i := 's'
+
 in
 
-  putint(n) ! sin error, variable declarada con inicialización e inferencia del tipo
+  n := 10;
+  put(i);
+  putint(n)
 
 end
