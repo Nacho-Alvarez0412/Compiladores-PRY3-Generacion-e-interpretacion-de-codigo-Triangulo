@@ -1032,7 +1032,7 @@ public final class Encoder implements Visitor {
   }
   
   public Object visitSimpleLongIdentifier(SimpleLongIdentifier ast, Object o) {
-    return null;
+    return ast.I.visit(this, o);
   }
     
   public Object visitPackageLongIdentifier(PackageLongIdentifier ast, Object o) {
@@ -1104,12 +1104,11 @@ public final class Encoder implements Visitor {
 // @funcionalidad metodos de visita encoder para AST de Varname, Vname y package
 // @codigo        A.139
   public Object visitSimpleProgram(SimpleProgram ast, Object o) {
-      return null;
-      
+      return ast.C.visit(this, o);
   }
   
   public Object visitCompoundProgram(CompoundProgram ast, Object o) {
-      return null;
+      return ast.C.visit(this, o);
   }
   /*
   public Object visitProgram(Program ast, Object o) {
