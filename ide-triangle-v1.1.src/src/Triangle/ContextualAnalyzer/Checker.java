@@ -640,10 +640,10 @@ public final class Checker implements Visitor {
   // @funcionalidad Implementacion de metodos checker para comandos
   // @codigo J.7
   public Object visitForFromCommand(ForFromCommand ast, Object o) {
-    ConstDeclaration controlVarDecl = new ConstDeclaration(ast.I,
-        new IntegerExpression(new IntegerLiteral("0", ast.position), ast.position), ast.position);
+    ConstDeclaration controlVarDecl = new ConstDeclaration(ast.I,ast.E, ast.position);
     idTable.openScope();
     controlVarDecl.visit(this, null);
+    ast.D = controlVarDecl;
     if (controlVarDecl.duplicated)
       reporter.reportError("identifier \"%\" already declared", ast.I.spelling, ast.position);
     return null;
