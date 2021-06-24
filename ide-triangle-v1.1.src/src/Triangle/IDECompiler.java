@@ -119,14 +119,19 @@ public class IDECompiler {
                 Checker checker = new Checker(report);
                 checker.check(parser.getSimpleProgram());
                 if (report.numErrors == 0) {
-                   // System.out.println("Code Generation ...");
-                    //Encoder encoder = new Encoder(report);
-                   //encoder.encodeRun(rootAST, false);
-
+                    // @author        Andres
+                    // @descripcion   Conectar code generation
+                    // @funcionalidad Code generation
+                    // @codigo        A.2
+                   // TODO: Check if this is the right way to integrate
+                   System.out.println("Code Generation ...");
+                   Encoder encoder = new Encoder(report);
+                   encoder.encodeRun(parser.getSimpleProgram(), false);
                     if (report.numErrors == 0) {
-                        //encoder.saveObjectProgram(sourceName.replace(".tri", ".tam"));
+                        encoder.saveObjectProgram(sourceName.replace(".tri", ".tam"));
                         success = true;
                     }
+                    // END CAMBIO Andres
                 }
             }
             else {
@@ -134,14 +139,19 @@ public class IDECompiler {
                 Checker checker = new Checker(report);
                 checker.check(parser.getCompoundProgram());
                 if (report.numErrors == 0) {
-                   // System.out.println("Code Generation ...");
-                    //Encoder encoder = new Encoder(report);
-                   //encoder.encodeRun(rootAST, false);
-
+                     // @author        Andres
+                    // @descripcion   Conectar code generation
+                    // @funcionalidad Code generation
+                    // @codigo        A.3
+                    // TODO: Check if this is the right way to integrate
+                    System.out.println("Code Generation ...");
+                    Encoder encoder = new Encoder(report);
+                    encoder.encodeRun(parser.getCompoundProgram(), false);
                     if (report.numErrors == 0) {
-                        //encoder.saveObjectProgram(sourceName.replace(".tri", ".tam"));
+                        encoder.saveObjectProgram(sourceName.replace(".tri", ".tam"));
                         success = true;
                     }
+                     // END CAMBIO Andre
                 }
             }
         }
