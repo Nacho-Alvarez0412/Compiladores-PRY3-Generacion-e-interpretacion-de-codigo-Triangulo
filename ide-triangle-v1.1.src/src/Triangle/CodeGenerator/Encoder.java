@@ -321,13 +321,17 @@ public final class Encoder implements Visitor {
     extraSize = ((Integer)ast.T.visit(this, null));
     emit(Machine.PUSHop, 0, 0, extraSize);
     ast.entity = new KnownAddress(Machine.addressSize, frame.level, frame.size);
-    writeTableDetails(ast); 
+    
     
     Integer valSize = (Integer) ast.E.visit(this, frame);
     Identifier id = new Identifier(ast.I.spelling,ast.position);
     id.decl = ast;
-    SimpleVname vn = new SimpleVname(new SimpleVarName(id,ast.position),ast.position);
+    
+    VarName varn = new SimpleVarName(id,ast.position);
+
+    SimpleVname vn = new SimpleVname(varn,ast.position);
     encodeStore(vn, new Frame (frame, valSize), valSize);
+    writeTableDetails(ast); 
     
     return extraSize;
   }
@@ -549,7 +553,7 @@ public final class Encoder implements Visitor {
   public Object visitVnameExpression(VnameExpression ast, Object o) {
     Frame frame = (Frame) o;
     Integer valSize = (Integer) ast.type.visit(this, null);
-    encodeFetch(ast.V, frame, valSize.intValue());
+    encodeFetch(ast.V, frame, valSize);
     return valSize;
   }
 
@@ -1305,35 +1309,72 @@ public final class Encoder implements Visitor {
 
   private void encodeStore(Vname V, Frame frame, int valSize) {
 
-    RuntimeEntity baseObject = (RuntimeEntity) V.visit(this, frame);
-    // If indexed = true, code will have been generated to load an index value.
-    if (valSize > 255) {
-      reporter.reportRestriction("can't store values larger than 255 words");
-      valSize = 255; // to allow code generation to continue
+    if (V instanceof SimpleVname){
+        SimpleVname svn = (SimpleVname) V;
+        RuntimeEntity baseObject = (RuntimeEntity) svn.VN.visit(this, frame);
+        // If indexed = true, code will have been generated to load an index value.
+        if (valSize > 255) {
+          reporter.reportRestriction("can't store values larger than 255 words");
+          valSize = 255; // to allow code generation to continue
+        }
+        if (baseObject instanceof KnownAddress) {
+          ObjectAddress address = ((KnownAddress) baseObject).address;
+          if (svn.VN.indexed) {
+            emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
+                 address.displacement + svn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+            emit(Machine.STOREIop, valSize, 0, 0);
+          } else {
+            emit(Machine.STOREop, valSize, displayRegister(frame.level,
+                 address.level), address.displacement + svn.VN.offset);
+          }
+        } else if (baseObject instanceof UnknownAddress) {
+          ObjectAddress address = ((UnknownAddress) baseObject).address;
+          emit(Machine.LOADop, Machine.addressSize, displayRegister(frame.level,
+               address.level), address.displacement);
+          if (svn.VN.indexed)
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          if (svn.VN.offset != 0) {
+            emit(Machine.LOADLop, 0, 0, svn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          }
+          emit(Machine.STOREIop, valSize, 0, 0);
+        }
     }
-    if (baseObject instanceof KnownAddress) {
-      ObjectAddress address = ((KnownAddress) baseObject).address;
-      if (V.indexed) {
-        emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
-             address.displacement + V.offset);
-        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
-        emit(Machine.STOREIop, valSize, 0, 0);
-      } else {
-        emit(Machine.STOREop, valSize, displayRegister(frame.level,
-	     address.level), address.displacement + V.offset);
-      }
-    } else if (baseObject instanceof UnknownAddress) {
-      ObjectAddress address = ((UnknownAddress) baseObject).address;
-      emit(Machine.LOADop, Machine.addressSize, displayRegister(frame.level,
-           address.level), address.displacement);
-      if (V.indexed)
-        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
-      if (V.offset != 0) {
-        emit(Machine.LOADLop, 0, 0, V.offset);
-        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
-      }
-      emit(Machine.STOREIop, valSize, 0, 0);
+    
+    else{
+        PackageVname pvn = (PackageVname) V;
+        RuntimeEntity baseObject = (RuntimeEntity) pvn.VN.visit(this, frame);
+        // If indexed = true, code will have been generated to load an index value.
+        if (valSize > 255) {
+          reporter.reportRestriction("can't store values larger than 255 words");
+          valSize = 255; // to allow code generation to continue
+        }
+        if (baseObject instanceof KnownAddress) {
+          ObjectAddress address = ((KnownAddress) baseObject).address;
+          if (pvn.VN.indexed) {
+            emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
+                 address.displacement + pvn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+            emit(Machine.STOREIop, valSize, 0, 0);
+          } else {
+            emit(Machine.STOREop, valSize, displayRegister(frame.level,
+                 address.level), address.displacement + pvn.VN.offset);
+          }
+        } else if (baseObject instanceof UnknownAddress) {
+          ObjectAddress address = ((UnknownAddress) baseObject).address;
+          emit(Machine.LOADop, Machine.addressSize, displayRegister(frame.level,
+               address.level), address.displacement);
+          if (pvn.VN.indexed)
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          if (pvn.VN.offset != 0) {
+            emit(Machine.LOADLop, 0, 0, pvn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          }
+          emit(Machine.STOREIop, valSize, 0, 0);
+        }
     }
+    
   }
   
 
@@ -1346,41 +1387,82 @@ public final class Encoder implements Visitor {
   // valSize is the size of the constant or variable's value.
 
   private void encodeFetch(Vname V, Frame frame, int valSize) {
-
-    RuntimeEntity baseObject = (RuntimeEntity) V.visit(this, frame);
-    // If indexed = true, code will have been generated to load an index value.
-    if (valSize > 255) {
-      reporter.reportRestriction("can't load values larger than 255 words");
-      valSize = 255; // to allow code generation to continue
+    
+    if (V instanceof SimpleVname){
+        SimpleVname svn = (SimpleVname) V;
+        RuntimeEntity baseObject = (RuntimeEntity) svn.VN.visit(this, frame);
+        // If indexed = true, code will have been generated to load an index value.
+        if (valSize > 255) {
+          reporter.reportRestriction("can't load values larger than 255 words");
+          valSize = 255; // to allow code generation to continue
+        }
+        if (baseObject instanceof KnownValue) {
+          // presumably offset = 0 and indexed = false
+          int value = ((KnownValue) baseObject).value;
+          emit(Machine.LOADLop, 0, 0, value);
+        } else if ((baseObject instanceof UnknownValue) ||
+                   (baseObject instanceof KnownAddress)) {
+          ObjectAddress address = (baseObject instanceof UnknownValue) ?
+                                  ((UnknownValue) baseObject).address :
+                                  ((KnownAddress) baseObject).address;
+          if (svn.VN.indexed) {
+            emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
+                 address.displacement + svn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+            emit(Machine.LOADIop, valSize, 0, 0);
+          } else
+            emit(Machine.LOADop, valSize, displayRegister(frame.level,
+                 address.level), address.displacement + svn.VN.offset);
+        } else if (baseObject instanceof UnknownAddress) {
+          ObjectAddress address = ((UnknownAddress) baseObject).address;
+          emit(Machine.LOADop, Machine.addressSize, displayRegister(frame.level,
+               address.level), address.displacement);
+          if (svn.VN.indexed)
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          if (svn.VN.offset != 0) {
+            emit(Machine.LOADLop, 0, 0, svn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          }
+          emit(Machine.LOADIop, valSize, 0, 0);
+        }
     }
-    if (baseObject instanceof KnownValue) {
-      // presumably offset = 0 and indexed = false
-      int value = ((KnownValue) baseObject).value;
-      emit(Machine.LOADLop, 0, 0, value);
-    } else if ((baseObject instanceof UnknownValue) ||
-               (baseObject instanceof KnownAddress)) {
-      ObjectAddress address = (baseObject instanceof UnknownValue) ?
-                              ((UnknownValue) baseObject).address :
-                              ((KnownAddress) baseObject).address;
-      if (V.indexed) {
-        emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
-             address.displacement + V.offset);
-        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
-        emit(Machine.LOADIop, valSize, 0, 0);
-      } else
-        emit(Machine.LOADop, valSize, displayRegister(frame.level,
-	     address.level), address.displacement + V.offset);
-    } else if (baseObject instanceof UnknownAddress) {
-      ObjectAddress address = ((UnknownAddress) baseObject).address;
-      emit(Machine.LOADop, Machine.addressSize, displayRegister(frame.level,
-           address.level), address.displacement);
-      if (V.indexed)
-        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
-      if (V.offset != 0) {
-        emit(Machine.LOADLop, 0, 0, V.offset);
-        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
-      }
-      emit(Machine.LOADIop, valSize, 0, 0);
+    else{
+        PackageVname pvn = (PackageVname) V;
+        RuntimeEntity baseObject = (RuntimeEntity) pvn.VN.visit(this, frame);
+        // If indexed = true, code will have been generated to load an index value.
+        if (valSize > 255) {
+          reporter.reportRestriction("can't load values larger than 255 words");
+          valSize = 255; // to allow code generation to continue
+        }
+        if (baseObject instanceof KnownValue) {
+          // presumably offset = 0 and indexed = false
+          int value = ((KnownValue) baseObject).value;
+          emit(Machine.LOADLop, 0, 0, value);
+        } else if ((baseObject instanceof UnknownValue) ||
+                   (baseObject instanceof KnownAddress)) {
+          ObjectAddress address = (baseObject instanceof UnknownValue) ?
+                                  ((UnknownValue) baseObject).address :
+                                  ((KnownAddress) baseObject).address;
+          if (pvn.VN.indexed) {
+            emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
+                 address.displacement + pvn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+            emit(Machine.LOADIop, valSize, 0, 0);
+          } else
+            emit(Machine.LOADop, valSize, displayRegister(frame.level,
+                 address.level), address.displacement + pvn.VN.offset);
+        } else if (baseObject instanceof UnknownAddress) {
+          ObjectAddress address = ((UnknownAddress) baseObject).address;
+          emit(Machine.LOADop, Machine.addressSize, displayRegister(frame.level,
+               address.level), address.displacement);
+          if (pvn.VN.indexed)
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          if (pvn.VN.offset != 0) {
+            emit(Machine.LOADLop, 0, 0, pvn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          }
+          emit(Machine.LOADIop, valSize, 0, 0);
+        }
     }
   }
 
@@ -1392,25 +1474,54 @@ public final class Encoder implements Visitor {
 
   private void encodeFetchAddress (Vname V, Frame frame) {
 
-    RuntimeEntity baseObject = (RuntimeEntity) V.visit(this, frame);
-    // If indexed = true, code will have been generated to load an index value.
-    if (baseObject instanceof KnownAddress) {
-      ObjectAddress address = ((KnownAddress) baseObject).address;
-      emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
-           address.displacement + V.offset);
-      if (V.indexed)
-        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
-    } else if (baseObject instanceof UnknownAddress) {
-      ObjectAddress address = ((UnknownAddress) baseObject).address;
-      emit(Machine.LOADop, Machine.addressSize,displayRegister(frame.level,
-           address.level), address.displacement);
-      if (V.indexed)
-        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
-      if (V.offset != 0) {
-        emit(Machine.LOADLop, 0, 0, V.offset);
-        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
-      }
+    if (V instanceof SimpleVname){
+        
+        SimpleVname svn = (SimpleVname) V;
+        RuntimeEntity baseObject = (RuntimeEntity) svn.VN.visit(this, frame);
+        // If indexed = true, code will have been generated to load an index value.
+        if (baseObject instanceof KnownAddress) {
+          ObjectAddress address = ((KnownAddress) baseObject).address;
+          emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
+               address.displacement + svn.VN.offset);
+          if (svn.VN.indexed)
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+        } else if (baseObject instanceof UnknownAddress) {
+          ObjectAddress address = ((UnknownAddress) baseObject).address;
+          emit(Machine.LOADop, Machine.addressSize,displayRegister(frame.level,
+               address.level), address.displacement);
+          if (svn.VN.indexed)
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          if (svn.VN.offset != 0) {
+            emit(Machine.LOADLop, 0, 0, svn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          }
+        }
     }
+    
+    else{
+        
+        PackageVname pvn = (PackageVname) V;
+        RuntimeEntity baseObject = (RuntimeEntity) pvn.VN.visit(this, frame);
+        // If indexed = true, code will have been generated to load an index value.
+        if (baseObject instanceof KnownAddress) {
+          ObjectAddress address = ((KnownAddress) baseObject).address;
+          emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
+               address.displacement + pvn.VN.offset);
+          if (pvn.VN.indexed)
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+        } else if (baseObject instanceof UnknownAddress) {
+          ObjectAddress address = ((UnknownAddress) baseObject).address;
+          emit(Machine.LOADop, Machine.addressSize,displayRegister(frame.level,
+               address.level), address.displacement);
+          if (pvn.VN.indexed)
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          if (pvn.VN.offset != 0) {
+            emit(Machine.LOADLop, 0, 0, pvn.VN.offset);
+            emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+          }
+        }
+    }
+    
   }
 
     @Override

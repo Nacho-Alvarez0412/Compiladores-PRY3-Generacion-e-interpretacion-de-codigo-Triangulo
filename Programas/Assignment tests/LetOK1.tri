@@ -1,13 +1,24 @@
 
 let
+  var q1 := [69,69,69];
 
-  var n : Integer;
-  var i := 's'
+  type  Date ~ record 
+		y: Integer,
+		m: Integer
+	      end;
+
+  var today := {y~8,
+	    m~10};
+
+  var jbzt := [1,2,3,4]
 
 in
-
-  n := 10;
-  put(i);
-  putint(n)
+  today.m := jbzt[1];
+  jbzt[2] := today.y;
+  putint(today.m);
+  puteol();
+  putint(today.y);
+  puteol();
+  putint(jbzt[2])
 
 end
