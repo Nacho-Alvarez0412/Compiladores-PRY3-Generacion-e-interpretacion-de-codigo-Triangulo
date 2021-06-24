@@ -315,6 +315,11 @@ public final class Encoder implements Visitor {
       return null;
   }
   
+   // @author        Ignacio
+   // @descripcion   Implementación de visitVarExpDeclaration
+   // @funcionalidad Implementación de visitVarExpDeclaration
+   // @codigo        I.2
+  
   public Object visitVarExpDeclaration(VarExpDeclaration ast, Object o) {
     Frame frame = (Frame) o;
     int extraSize;
@@ -335,6 +340,8 @@ public final class Encoder implements Visitor {
     
     return extraSize;
   }
+  
+  //END CAMBIO IGNACIO
   
   public Object visitRecDeclaration(RecDeclaration ast, Object o) {
       return null;
@@ -525,6 +532,11 @@ public final class Encoder implements Visitor {
     emit(Machine.LOADLop, 0, 0, Integer.parseInt(ast.IL.spelling));
     return valSize;
   }
+  
+  // @author        Ignacio
+  // @descripcion   Implementación Let Command
+  // @funcionalidad Implementación Let Command
+  // @codigo        I.3
 
   public Object visitLetExpression(LetExpression ast, Object o) {
     Frame frame = (Frame) o;
@@ -536,6 +548,8 @@ public final class Encoder implements Visitor {
       emit(Machine.POPop, valSize.intValue(), 0, extraSize);
     return valSize;
   }
+  
+  // END CAMBIO IGNACIO
 
   public Object visitRecordExpression(RecordExpression ast, Object o){
     ast.type.visit(this, null);
@@ -1306,6 +1320,12 @@ public final class Encoder implements Visitor {
   // frameSize is the anticipated size of the local stack frame when
   // the constant or variable is fetched at run-time.
   // valSize is the size of the constant or variable's value.
+  
+  
+  // @author        Ignacio
+  // @descripcion   Compatibilidad de Encodes Arreglada
+  // @funcionalidad Compatibilidad con VarName
+  // @codigo        I.1
 
   private void encodeStore(Vname V, Frame frame, int valSize) {
 
@@ -1523,6 +1543,120 @@ public final class Encoder implements Visitor {
     }
     
   }
+  
+  /*
+  
+  private void encodeStore(Vname V, Frame frame, int valSize) {
+
+    RuntimeEntity baseObject = (RuntimeEntity) V.visit(this, frame);
+    // If indexed = true, code will have been generated to load an index value.
+    if (valSize > 255) {
+      reporter.reportRestriction("can't store values larger than 255 words");
+      valSize = 255; // to allow code generation to continue
+    }
+    if (baseObject instanceof KnownAddress) {
+      ObjectAddress address = ((KnownAddress) baseObject).address;
+      if (V.indexed) {
+        emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
+             address.displacement + V.offset);
+        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+        emit(Machine.STOREIop, valSize, 0, 0);
+      } else {
+        emit(Machine.STOREop, valSize, displayRegister(frame.level,
+	     address.level), address.displacement + V.offset);
+      }
+    } else if (baseObject instanceof UnknownAddress) {
+      ObjectAddress address = ((UnknownAddress) baseObject).address;
+      emit(Machine.LOADop, Machine.addressSize, displayRegister(frame.level,
+           address.level), address.displacement);
+      if (V.indexed)
+        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+      if (V.offset != 0) {
+        emit(Machine.LOADLop, 0, 0, V.offset);
+        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+      }
+      emit(Machine.STOREIop, valSize, 0, 0);
+    }
+  }
+
+  // Generates code to fetch the value of a named constant or variable
+  // and push it on to the stack.
+  // currentLevel is the routine level where the vname occurs.
+  // frameSize is the anticipated size of the local stack frame when
+  // the constant or variable is fetched at run-time.
+  // valSize is the size of the constant or variable's value.
+
+  private void encodeFetch(Vname V, Frame frame, int valSize) {
+
+    RuntimeEntity baseObject = (RuntimeEntity) V.visit(this, frame);
+    // If indexed = true, code will have been generated to load an index value.
+    if (valSize > 255) {
+      reporter.reportRestriction("can't load values larger than 255 words");
+      valSize = 255; // to allow code generation to continue
+    }
+    if (baseObject instanceof KnownValue) {
+      // presumably offset = 0 and indexed = false
+      int value = ((KnownValue) baseObject).value;
+      emit(Machine.LOADLop, 0, 0, value);
+    } else if ((baseObject instanceof UnknownValue) ||
+               (baseObject instanceof KnownAddress)) {
+      ObjectAddress address = (baseObject instanceof UnknownValue) ?
+                              ((UnknownValue) baseObject).address :
+                              ((KnownAddress) baseObject).address;
+      if (V.indexed) {
+        emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
+             address.displacement + V.offset);
+        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+        emit(Machine.LOADIop, valSize, 0, 0);
+      } else
+        emit(Machine.LOADop, valSize, displayRegister(frame.level,
+	     address.level), address.displacement + V.offset);
+    } else if (baseObject instanceof UnknownAddress) {
+      ObjectAddress address = ((UnknownAddress) baseObject).address;
+      emit(Machine.LOADop, Machine.addressSize, displayRegister(frame.level,
+           address.level), address.displacement);
+      if (V.indexed)
+        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+      if (V.offset != 0) {
+        emit(Machine.LOADLop, 0, 0, V.offset);
+        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+      }
+      emit(Machine.LOADIop, valSize, 0, 0);
+    }
+  }
+
+  // Generates code to compute and push the address of a named variable.
+  // vname is the program phrase that names this variable.
+  // currentLevel is the routine level where the vname occurs.
+  // frameSize is the anticipated size of the local stack frame when
+  // the variable is addressed at run-time.
+
+  private void encodeFetchAddress (Vname V, Frame frame) {
+
+    RuntimeEntity baseObject = (RuntimeEntity) V.visit(this, frame);
+    // If indexed = true, code will have been generated to load an index value.
+    if (baseObject instanceof KnownAddress) {
+      ObjectAddress address = ((KnownAddress) baseObject).address;
+      emit(Machine.LOADAop, 0, displayRegister(frame.level, address.level),
+           address.displacement + V.offset);
+      if (V.indexed)
+        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+    } else if (baseObject instanceof UnknownAddress) {
+      ObjectAddress address = ((UnknownAddress) baseObject).address;
+      emit(Machine.LOADop, Machine.addressSize,displayRegister(frame.level,
+           address.level), address.displacement);
+      if (V.indexed)
+        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+      if (V.offset != 0) {
+        emit(Machine.LOADLop, 0, 0, V.offset);
+        emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.addDisplacement);
+      }
+    }
+  }
+  
+  */
+  
+  //END CAMBIO IGNACIO
 
     @Override
     public Object visitFuncDeclaration2(FuncDeclaration ast, Object o) {
