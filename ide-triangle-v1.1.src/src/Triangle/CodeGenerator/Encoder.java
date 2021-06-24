@@ -152,7 +152,7 @@ public final class Encoder implements Visitor {
   // @author        Andres
   // @descripcion   Metodo encoder para visitar CompoundIfCommand
   // @funcionalidad Cambio en las alternativas de single-command
-  // @codigo        A.22
+  // @codigo        A.5
   public Object visitCompoundIfCommand(CompoundIfCommand ast, Object o) {
     Frame frame = (Frame) o;
     int jumpifAddr, jumpAddr;
@@ -191,7 +191,7 @@ public final class Encoder implements Visitor {
   // @author        Andres
   // @descripcion   Metodo encoder para visitar SingleElsifCommand
   // @funcionalidad AST SingleElsifCommand
-  // @codigo        A.16
+  // @codigo        A.6
   public Object visitSingleElsifCommand(SingleElsifCommand ast, Object o) {
     Frame frame = (Frame) o;
     int jumpifAddr, jumpAddr;
@@ -211,15 +211,18 @@ public final class Encoder implements Visitor {
   // @author        Andres
   // @descripcion   Metodo encoder para visitar SequentialElsifCommand
   // @funcionalidad AST SequentialElsifCommand
-  // @codigo        A.17
+  // @codigo        A.7
   public Object visitSequentialElsifCommand(SequentialElsifCommand ast, Object o) {
       Frame frame = (Frame) o;
       ArrayList<Integer> jumpAddrs = new ArrayList<Integer>();
+      Object addrs = ast.SE1.visit(this, frame);
       // Append an ArrayList of Integer if it is sequential
       if (ast.SE1 instanceof SingleElsifCommand) {
-          jumpAddrs.add((Integer) ast.SE1.visit(this, frame));
-      } else if (ast.SE2 instanceof SequentialElsifCommand) {
-          jumpAddrs.addAll((ArrayList<Integer>) ast.SE1.visit(this, frame));
+          int incomingAddr = (Integer) addrs;
+          jumpAddrs.add(incomingAddr);
+      } else if (ast.SE1 instanceof SequentialElsifCommand) {
+          ArrayList<Integer> addressArr = (ArrayList<Integer>) addrs;
+          jumpAddrs.addAll(addressArr);
       }
       int elsif2JumpAddr = (Integer) ast.SE2.visit(this, frame);
       jumpAddrs.add(elsif2JumpAddr);

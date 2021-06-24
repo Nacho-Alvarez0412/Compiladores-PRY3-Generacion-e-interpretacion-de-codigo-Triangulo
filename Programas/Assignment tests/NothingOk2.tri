@@ -1,7 +1,13 @@
 if 1>2 then
 	putint(2)
 elsif 3=5 then
-	putint(32)
+	putint(10)
+elsif 3>10 then
+	putint(8)
+elsif 3=4 then
+	putint(1)
+elsif 3=3 then
+	putint(78)
 else
 	putint(9);
 	nothing
