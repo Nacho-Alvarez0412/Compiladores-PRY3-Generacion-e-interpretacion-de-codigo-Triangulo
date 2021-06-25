@@ -1,8 +1,0 @@
-loop
-
-  while '0' do ! error de tipo 
-
-    putint (1) 
-
-end
-

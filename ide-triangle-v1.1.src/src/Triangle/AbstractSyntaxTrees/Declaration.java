@@ -17,7 +17,9 @@ package Triangle.AbstractSyntaxTrees;
 import Triangle.SyntacticAnalyzer.SourcePosition;
 
 public abstract class Declaration extends AST {
-
+    
+  public String packageEx;
+  
   public Declaration (SourcePosition thePosition) {
     super (thePosition);
     duplicated = false;

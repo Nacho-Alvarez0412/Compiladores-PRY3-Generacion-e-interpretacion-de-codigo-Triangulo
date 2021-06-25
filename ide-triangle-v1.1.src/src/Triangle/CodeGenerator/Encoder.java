@@ -650,7 +650,11 @@ public final class Encoder implements Visitor {
   public Object visitSequentialDeclaration(SequentialDeclaration ast, Object o) {
     Frame frame = (Frame) o;
     int extraSize1, extraSize2;
-
+    
+    if(ast.packageEx != null){
+        ast.D1.packageEx = ast.packageEx;
+        ast.D2.packageEx = ast.packageEx;
+    }
     extraSize1 = ((Integer) ast.D1.visit(this, frame)).intValue();
     Frame frame1 = new Frame (frame, extraSize1);
     extraSize2 = ((Integer) ast.D2.visit(this, frame1)).intValue();
@@ -674,12 +678,14 @@ public final class Encoder implements Visitor {
    // @codigo        J.45
 
    public Object visitVarTDDeclaration(VarTDDeclaration ast, Object o) {
+       
        Frame frame = (Frame) o;
        int extraSize;
        extraSize = ((Integer) ast.T.visit(this, null)).intValue();
        emit(Machine.PUSHop, 0, 0, extraSize);
        ast.entity = new KnownAddress(Machine.addressSize, frame.level, frame.size);
        writeTableDetails(ast);
+       
        return new Integer(extraSize);
      }
 
@@ -1063,6 +1069,7 @@ public final class Encoder implements Visitor {
   }
   
   public Object visitPackageIdentifier(PackageIdentifier ast, Object o) {
+      ast.I.visit(this, o);
       return null;
   }
   
@@ -1079,11 +1086,19 @@ public final class Encoder implements Visitor {
   }
     
   public Object visitSinglePackageDeclaration(SinglePackageDeclaration ast, Object o) {
-    return null;
+      System.out.println("1");
+    Frame frame = (Frame) o;
+    ast.D.packageEx = ast.PI.I.spelling;
+    int extraSize = ((Integer) ast.D.visit(this, frame)).intValue();
+    
+    return extraSize;
   }
   
   public Object visitSequentialPackageDeclaration(SequentialPackageDeclaration ast, Object o) {
-    return null;
+      Frame frame = (Frame) o;
+      int extraSize = ((Integer) ast.PD1.visit(this, frame)).intValue();
+      int extraSizeSeq = ((Integer) ast.PD2.visit(this,new Frame(frame,extraSize))).intValue();
+      return extraSize + extraSizeSeq;
   }
   
   /*
@@ -1147,7 +1162,15 @@ public final class Encoder implements Visitor {
   }
   
   public Object visitCompoundProgram(CompoundProgram ast, Object o) {
-      return ast.C.visit(this, o);
+      Frame frame = (Frame) o;
+      Integer extraSize = (Integer)ast.PD.visit(this, frame);
+      ast.C.visit(this, new Frame(frame,extraSize));
+      
+      if (extraSize > 0)
+        emit(Machine.POPop, 0, 0, extraSize);  
+      
+      return null;
+      
   }
   /*
   public Object visitProgram(Program ast, Object o) {
