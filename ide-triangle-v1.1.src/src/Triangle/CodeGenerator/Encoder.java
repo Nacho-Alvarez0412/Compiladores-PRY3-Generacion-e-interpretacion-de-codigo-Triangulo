@@ -179,7 +179,7 @@ public final class Encoder implements Visitor {
         patch((Integer) elsifJumpAddrs, nextInstrAddr);
     } else {
         ArrayList<Integer> addrs = (ArrayList<Integer>) elsifJumpAddrs;
-          // Update the jumps of the elsifs
+        // Update the jumps of the elsifs
         for (int addr : addrs) {
             patch(addr, nextInstrAddr);
         }
@@ -388,57 +388,33 @@ public final class Encoder implements Visitor {
   // END CAMBIO Joseph
   
     // @author        Andres
-    // @descripcion   Metodo encoder para visitar visitCaseLiterals
-    // @funcionalidad AST visitCaseLiterals
-    // @codigo        A.58
-    public Object visitCaseLiterals(CaseLiterals ast, Object o) {
-        return null;
-    }
-     // END Cambio Andres
- 
- // @author        Andres
     // @descripcion   Metodo encoder para visitar Choose command
     // @funcionalidad AST ChooseCommand
-    // @codigo        A.100
+    // @codigo        A.10
     public Object visitChooseCommand(ChooseCommand ast, Object o) {
+      Frame frame = (Frame) o;
+      // Evaluate choose expresion
+      Integer valSize = (Integer) ast.E.visit(this, frame);
+      ast.CS.visit(this, frame);
       return null;
     }
     // END cambio Andres
-
-  // Cases
-  // @author        Andres
-  // @descripcion   Metodo encoder para visitar CaseLiteral
-  // @funcionalidad AST CaseLiteral
-  // @codigo        A.32
-  public Object visitCaseLiteral(CaseLiteral ast, Object o) {
-    return null;
-  }
-  // END cambio Andres
-
-  // @author        Andres
-  // @descripcion   Metodo encoder para visitar SimpleCaseRange
-  // @funcionalidad AST SimpleCaseRange
-  // @codigo        A.43
-  public Object visitSimpleCaseRange(SimpleCaseRange ast, Object o) {
-    return null;
-  }
-  // END cambio Andres
-
-  // @author        Andres
-  // @descripcion   Metodo encoder para visitar CompoundCaseRange
-  // @funcionalidad AST CompoundCaseRange
-  // @codigo        A.44
-  public Object visitCompoundCaseRange(CompoundCaseRange ast, Object o) {
-    return null;
-  }
-  // END cambio Andres
-
+    
     // @author        Andres
-    // @descripcion   Metodo encoder para visitar SequentialCaseRange
-    // @funcionalidad AST SequentialCaseRange
-    // @codigo        A.59
-    public Object visitSequentialCaseRange(SequentialCaseRange ast, Object o) {
+    // @descripcion   Metodos encoder para visitar ASTS nuevos
+    // @funcionalidad SimpleCases AST
+    // @codigo        A.86
+    public Object visitSimpleCases(SimpleCases ast, Object o) {
         return null;
+    }
+    // END Cambio Andres
+    
+    // @author        Andres
+    // @descripcion   Metodos encoder para visitar ASTS nuevos
+    // @funcionalidad CompoundCases AST
+    // @codigo        A.84
+    public Object visitCompoundCases(CompoundCases ast, Object o) {
+       return null;
     }
     // END Cambio Andres
     
@@ -453,28 +429,10 @@ public final class Encoder implements Visitor {
     
     // @author        Andres
     // @descripcion   Metodos encoder para visitar ASTS nuevos
-    // @funcionalidad CompoundCases AST
-    // @codigo        A.84
-    public Object visitCompoundCases(CompoundCases ast, Object o) {
-       return null;
-    }
-     // END Cambio Andres
-    
-    // @author        Andres
-    // @descripcion   Metodos encoder para visitar ASTS nuevos
     // @funcionalidad SequentialCase AST
     // @codigo        A.85
     public Object visitSequentialCase(SequentialCase ast, Object o) {
        return null;
-    }
-     // END Cambio Andres
-    
-    // @author        Andres
-    // @descripcion   Metodos encoder para visitar ASTS nuevos
-    // @funcionalidad SimpleCases AST
-    // @codigo        A.86
-    public Object visitSimpleCases(SimpleCases ast, Object o) {
-        return null;
     }
      // END Cambio Andres
     
@@ -486,6 +444,52 @@ public final class Encoder implements Visitor {
         return null;
     }
      // END Cambio Andres
+  
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar visitCaseLiterals
+    // @funcionalidad AST visitCaseLiterals
+    // @codigo        A.58
+    public Object visitCaseLiterals(CaseLiterals ast, Object o) {
+        return null;
+    }
+     // END Cambio Andres
+ 
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar SequentialCaseRange
+    // @funcionalidad AST SequentialCaseRange
+    // @codigo        A.59
+    public Object visitSequentialCaseRange(SequentialCaseRange ast, Object o) {
+        return null;
+    }
+    // END Cambio Andres
+
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar SimpleCaseRange
+    // @funcionalidad AST SimpleCaseRange
+    // @codigo        A.43
+    public Object visitSimpleCaseRange(SimpleCaseRange ast, Object o) {
+      return null;
+    }
+    // END cambio Andres
+
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar CompoundCaseRange
+    // @funcionalidad AST CompoundCaseRange
+    // @codigo        A.44
+    public Object visitCompoundCaseRange(CompoundCaseRange ast, Object o) {
+      return null;
+    }
+    // END cambio Andres
+
+    // Cases
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar CaseLiteral
+    // @funcionalidad AST CaseLiteral
+    // @codigo        A.32
+    public Object visitCaseLiteral(CaseLiteral ast, Object o) {
+      return null;
+    }
+    // END cambio Andres
 
   // Expressions
   public Object visitArrayExpression(ArrayExpression ast, Object o) {

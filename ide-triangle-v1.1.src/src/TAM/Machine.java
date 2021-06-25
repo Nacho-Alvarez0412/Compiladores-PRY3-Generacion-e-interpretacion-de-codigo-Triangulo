@@ -50,7 +50,15 @@ public final class Machine {
     JUMPop = 12,
     JUMPIop = 13,
     JUMPIFop = 14,
-    HALTop = 15;
+    HALTop = 15,
+    // @author        Andres
+    // @descripcion   Nueva instruccion de cases para TAM
+    // @funcionalidad Generacion de codigo para choose command
+    // @codigo        A.11
+    CASEop = 16,
+    CASEGEop = 17,
+    CASELEop = 18;
+    // END CAMBIO Andres
 
 
 

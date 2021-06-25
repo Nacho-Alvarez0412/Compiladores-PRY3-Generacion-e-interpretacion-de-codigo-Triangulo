@@ -324,6 +324,32 @@ public class Disassembler {
 
       case Machine.HALTop:
         System.out.print ("HALT  ");
+          
+     // @author        Andres
+     // @descripcion   Desensamblar codigo para nuevas instrucciones TAM
+     // @funcionalidad Generacion de codigo para choose command
+     // @codigo        A.12
+      case Machine.CASEop:
+        System.out.println("CASE");
+        writeN(instr.n);
+        writeD(instr.d);
+        writeR('[', instr.r, ']');
+        break;
+          
+    case Machine.CASEGEop:
+        System.out.println("CASEGE");
+        writeN(instr.n);
+        writeD(instr.d);
+        writeR('[', instr.r, ']');
+        break;
+        
+     case Machine.CASELEop:
+        System.out.println("CASELE");
+        writeN(instr.n);
+        writeD(instr.d);
+        writeR('[', instr.r, ']');
+        break;
+    // END CAMBIO Andres
     }
   }
 

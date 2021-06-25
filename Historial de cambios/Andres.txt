@@ -1,0 +1,12 @@
+A.1 Main.java
+A.2 IDECompiler.java
+A.3 IDECompiler.java
+A.4 Main.java
+A.5 Encoder.java
+A.6 Encoder.java
+A.7 Encoder.java
+A.8 Interpreter.java
+A.9 Interpreter.java
+A.10 Encoder.java
+A.11 Machine.java
+A.12 Disassembler.java
