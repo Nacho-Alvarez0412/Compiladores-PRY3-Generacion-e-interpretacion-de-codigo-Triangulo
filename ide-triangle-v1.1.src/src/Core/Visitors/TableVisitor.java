@@ -561,6 +561,11 @@ public class TableVisitor implements Visitor {
     public Object visitConstDeclaration(ConstDeclaration ast, Object o) {
         String name = ast.I.spelling;
         String type = "N/A";
+        
+        if(ast.packageEx != null) {
+            name = ast.packageEx + "$" + name;
+        }
+        
         try {
             int size = (ast.entity != null ? ast.entity.size : 0);
             int level = -1;
@@ -586,8 +591,14 @@ public class TableVisitor implements Visitor {
     }
 
     public Object visitFuncDeclaration(FuncDeclaration ast, Object o) {
+        String id = ast.I.spelling;
+        
+        if(ast.packageEx != null) {
+            id = ast.packageEx + "$" + id;
+        }
+        
         try {
-            addIdentifier(ast.I.spelling,
+        addIdentifier(id,
                     "KnownRoutine",
                     (ast.entity != null ? ast.entity.size : 0),
                     ((KnownRoutine) ast.entity).address.level,
@@ -603,8 +614,14 @@ public class TableVisitor implements Visitor {
     }
 
     public Object visitProcDeclaration(ProcDeclaration ast, Object o) {
+        String id = ast.I.spelling;
+        
+        if(ast.packageEx != null) {
+            id = ast.packageEx + "$" + id;
+        }
+        
         try {
-            addIdentifier(ast.I.spelling, "KnownRoutine",
+        addIdentifier(id, "KnownRoutine",
                     (ast.entity != null ? ast.entity.size : 0),
                     ((KnownRoutine) ast.entity).address.level,
                     ((KnownRoutine) ast.entity).address.displacement,
@@ -642,8 +659,14 @@ public class TableVisitor implements Visitor {
     // @funcionalidad Cambio en las alternativas de declaration
     // @codigo        J.49
     public Object visitVarTDDeclaration(VarTDDeclaration ast, Object o) {
+        String id = ast.I.spelling;
+        
+        if(ast.packageEx != null) {
+            id = ast.packageEx + "$" + id;
+        }
+        
         try {
-        addIdentifier(ast.I.spelling,
+        addIdentifier(id,
                 "KnownAddress",
                 (ast.entity != null ? ast.entity.size : 0),
                 ((KnownAddress) ast.entity).address.level,
@@ -656,8 +679,14 @@ public class TableVisitor implements Visitor {
     }
         
     public Object visitVarExpDeclaration(VarExpDeclaration ast, Object o) {
+       String id = ast.I.spelling;
+        
+        if(ast.packageEx != null) {
+            id = ast.packageEx + "$" + id;
+        }
+        
         try {
-        addIdentifier(ast.I.spelling,
+        addIdentifier(id,
                 "KnownAddress",
                 (ast.entity != null ? ast.entity.size : 0),
                 ((KnownAddress) ast.entity).address.level,

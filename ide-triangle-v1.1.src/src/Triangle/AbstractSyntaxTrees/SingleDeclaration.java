@@ -9,6 +9,7 @@ package Triangle.AbstractSyntaxTrees;
 import Triangle.SyntacticAnalyzer.SourcePosition;
 
 public abstract class SingleDeclaration extends Declaration {
+    
 
   public SingleDeclaration (SourcePosition thePosition) {
     super (thePosition);
