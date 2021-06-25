@@ -1,6 +1,0 @@
-let
-  const a ~ 1
-in
-  getint(var a)
-end
-

@@ -1,10 +1,16 @@
 package myP ~ 
-	var a: Integer
+	var a:= 111;
+	var c:= 2
+end;
+
+package myP1 ~ 
+	var a:= 13;
+	var c:= 2
 end;
 let
-	var b: Integer
+	var b:= 7
 in
-	putint (b + myP $ a) 
+	putint (myP $ a) 
 end
 
 !OK
