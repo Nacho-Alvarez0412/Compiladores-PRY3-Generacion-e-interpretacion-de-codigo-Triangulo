@@ -586,9 +586,20 @@ public class Interpreter {
           else
             CP = CP + 1;
           break;
+        // @author        Andres
+        // @descripcion   Operacion HALT nueva para choose command
+        // @funcionalidad Generacion de codigo para choose command
+        // @codigo        A.14
         case Machine.HALTop:
-          status = halted;
+          if (n == 8) status = unmatchedCase; 
+          else status = halted;
           break;
+        /*
+        case Machine.HALTop:
+            status = halted;
+           break;
+        */
+        // END CAMBIO Andres
         // @author        Andres
         // @descripcion   Ejecucion para las nuevas instrucciones CASE de TAM
         // @funcionalidad Generacion de codigo para choose command

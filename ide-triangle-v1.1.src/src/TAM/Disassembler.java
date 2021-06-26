@@ -321,10 +321,20 @@ public class Disassembler {
         writeD(instr.d);
         writeR('[', instr.r, ']');
         break;
-
+    // @author        Andres
+    // @descripcion   Mostrar codigo de operacion HALT
+    // @funcionalidad Generacion de codigo para choose command
+    // @codigo        A.16
+      case Machine.HALTop:
+        System.out.print("HALT");
+        writeN(instr.n);
+        break;
+    /*
       case Machine.HALTop:
         System.out.print ("HALT  ");
         break;
+    */
+    // END CAMBIO Andres
           
      // @author        Andres
      // @descripcion   Desensamblar codigo para nuevas instrucciones TAM

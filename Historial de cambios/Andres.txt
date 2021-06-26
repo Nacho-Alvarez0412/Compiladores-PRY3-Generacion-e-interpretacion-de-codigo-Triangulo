@@ -10,3 +10,7 @@ A.9 Interpreter.java
 A.10 Encoder.java
 A.11 Machine.java
 A.12 Disassembler.java
+A.13 Interpreter.java
+A.14 Interpreter.java
+A.15 Encoder.java
+A.16 Disassembler.java

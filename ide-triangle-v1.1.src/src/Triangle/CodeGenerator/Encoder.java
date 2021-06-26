@@ -414,7 +414,9 @@ public final class Encoder implements Visitor {
     public Object visitSimpleCases(SimpleCases ast, Object o) {
         Frame frame = (Frame) o;
         ArrayList<Integer> caseFinishAddrs = (ArrayList<Integer>) ast.C.visit(this, frame);
-        // TODO: Add halt execution if the choose never hits a case
+        // HALT instruction in case of not entering a when instruction
+        emit(Machine.POPop, 0, 0, 1);
+        emit(Machine.HALTop, 8, 0, 0);
         return caseFinishAddrs;
     }
     // END Cambio Andres
@@ -1283,7 +1285,15 @@ public final class Encoder implements Visitor {
     tableDetailsReqd = showingTable;
     //startCodeGeneration();
     theAST.visit(this, new Frame (0, 0));
+    // @author        Andres
+    // @descripcion   Ejecucion de nueva operacion HALT
+    // @funcionalidad Nuevos codigos para comando HALT
+    // @codigo        A.15
+    emit(Machine.HALTop, 1, 0, 0);
+    /*
     emit(Machine.HALTop, 0, 0, 0);
+    */
+    // END CAMBIO Andres
   }
 
   // Decides run-time representation of a standard constant.
