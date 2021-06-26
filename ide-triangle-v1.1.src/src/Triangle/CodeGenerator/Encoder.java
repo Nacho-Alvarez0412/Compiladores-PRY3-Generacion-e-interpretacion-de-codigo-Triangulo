@@ -538,9 +538,33 @@ public final class Encoder implements Visitor {
     // @funcionalidad AST CompoundCaseRange
     // @codigo        A.44
     public Object visitCompoundCaseRange(CompoundCaseRange ast, Object o) {
-      
+        Frame frame = (Frame) o;
         
-      return null;
+        int jumpToWhenCommandAddr, jumpToNextCaseAddr, jumpToNextRangeComparison;
+
+        jumpToNextRangeComparison = nextInstrAddr;
+        if (ast.CL1.T instanceof IntegerLiteral) {
+            emit(Machine.CASEGEop, (int) ast.CL1.visit(this, frame), Machine.CBr, 0);
+        } else if (ast.CL1.T instanceof CharacterLiteral) {
+            emit(Machine.CASEGEop, (char) ast.CL1.visit(this, frame), Machine.CBr, 0);
+        }
+        // Jump to next case if first comparison is false
+        jumpToNextCaseAddr = nextInstrAddr;
+        emit(Machine.JUMPop, 0, Machine.CBr, 0);
+        patch(jumpToNextRangeComparison, nextInstrAddr);
+        // Next case range comparison
+        jumpToWhenCommandAddr = nextInstrAddr;
+        if (ast.CL2.T instanceof IntegerLiteral) {
+            emit(Machine.CASELEop, (int) ast.CL2.visit(this, frame), Machine.CBr, 0);
+        } else if (ast.CL2.T instanceof CharacterLiteral) {
+            emit(Machine.CASELEop, (char) ast.CL2.visit(this, frame), Machine.CBr, 0);
+        }
+        patch(jumpToNextCaseAddr, nextInstrAddr);
+        
+        ArrayList<Integer> jumpToCommandAddrs = new ArrayList<>();
+        jumpToCommandAddrs.add(jumpToWhenCommandAddr);
+        
+        return jumpToCommandAddrs;
     }
     // END cambio Andres
 
