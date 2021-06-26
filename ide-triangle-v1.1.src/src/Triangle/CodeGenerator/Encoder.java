@@ -176,25 +176,14 @@ public final class Encoder implements Visitor {
   // END cambio Andres
   
   
-  // @author        Joseph
-  // @descripcion   Cambio en metodo encoder para visitar CallCommand 
-  // @funcionalidad Cambio en las alternativas de single-command
-  // @codigo        J.67
+
   public Object visitCallCommand(CallCommand ast, Object o) {
     Frame frame = (Frame) o;
     Integer argsSize = (Integer) ast.APS.visit(this, frame);
     ast.LI.visit(this, new Frame(frame.level, argsSize));
     return null;
   }
-  /*J.67
-  public Object visitCallCommand(CallCommand ast, Object o) {
-    Frame frame = (Frame) o;
-    Integer argsSize = (Integer) ast.APS.visit(this, frame);
-    ast.I.visit(this, new Frame(frame.level, argsSize));
-    return null;
-  }
-  */
-  // END CAMBIO Joseph
+
   
   public Object visitEmptyCommand(EmptyCommand ast, Object o) {
     return null;
@@ -222,8 +211,6 @@ public final class Encoder implements Visitor {
     ast.C.visit(this, new Frame(frame, extraSize));
     if (extraSize > 0)
       emit(Machine.POPop, 0, 0, extraSize);
-
-    
     return null;
   }
 
@@ -234,10 +221,6 @@ public final class Encoder implements Visitor {
   }
 
 
-// @author        Joseph
-// @descripcion   Cambio de while como alternativa de single-command
-// @funcionalidad Cambio en las alternativas de single-command
-// @codigo        J.14
   public Object visitWhileLoopCommand(WhileLoopCommand ast, Object o) {
     Frame frame = (Frame) o;
     int jumpAddr, loopAddr;
@@ -252,55 +235,126 @@ public final class Encoder implements Visitor {
     return null;
   }
   
- /*J.14
-  public Object visitWhileCommand(WhileCommand ast, Object o) {
+  
+  // New Loop ASTs
+  
+  // @author        Joseph
+  // @descripcion   Metodos encoder para comandos loop
+  // @funcionalidad Metodo encoder para Until loop
+  // @codigo        J.1
+  public Object visitUntilLoopCommand(UntilLoopCommand ast, Object o) {
     Frame frame = (Frame) o;
     int jumpAddr, loopAddr;
-
+    
     jumpAddr = nextInstrAddr;
     emit(Machine.JUMPop, 0, Machine.CBr, 0);
     loopAddr = nextInstrAddr;
     ast.C.visit(this, frame);
     patch(jumpAddr, nextInstrAddr);
     ast.E.visit(this, frame);
+    emit(Machine.JUMPIFop, Machine.falseRep, Machine.CBr, loopAddr);
+    return null;
+  }
+  // END CAMBIO Joseph
+  
+  // @author        Joseph
+  // @descripcion   Metodos encoder para comandos loop
+  // @funcionalidad Metodo encoder para loops con entrada asegurada
+  // @codigo        J.2
+  public Object visitDoLoopWhileCommand(DoLoopWhileCommand ast, Object o) {
+    Frame frame = (Frame) o;
+    int loopAddr;
+    loopAddr = nextInstrAddr;
+    ast.C.visit(this, frame);
+    ast.E.visit(this, frame);
     emit(Machine.JUMPIFop, Machine.trueRep, Machine.CBr, loopAddr);
     return null;
   }
-  */
-//END CAMBIO Joseph
-  
-  
-  
-  
- // New ASTs
- 
-  // @author        Joseph
-  // @descripcion   Metodos checker para visitar nuevos ASTs de single-command
-  // @funcionalidad Creacion de nuevas alternativas de single-command
-  // @codigo        J.18
-  public Object visitUntilLoopCommand(UntilLoopCommand ast, Object o) {
-      return null;
-  }
-  
-  public Object visitDoLoopWhileCommand(DoLoopWhileCommand ast, Object o) {
-      return null;
-  }
   
   public Object visitDoLoopUntilCommand(DoLoopUntilCommand ast, Object o) {
+    Frame frame = (Frame) o;
+    int loopAddr;
+    loopAddr = nextInstrAddr;
+    ast.C.visit(this, frame);
+    ast.E.visit(this, frame);
+    emit(Machine.JUMPIFop, Machine.falseRep, Machine.CBr, loopAddr);
+    return null;
+  }
+  // END CAMBIO Joseph
+  
+  public Object visitForFromCommand(ForFromCommand ast, Object o) {
       return null;
   }
-  
+
+  // @author        Joseph
+  // @descripcion   Metodos encoder para comandos loop
+  // @funcionalidad Metodo encoder para loops con variable de control
+  // @codigo        J.3
   public Object visitForLoopDoCommand(ForLoopDoCommand ast, Object o) {
-      return null;
+    Frame frame = (Frame) o;
+    int loopAddr, jumpAddr;
+    int supSize = ((Integer) ast.E.visit(this, frame)).intValue();
+    Frame frame1 = new Frame(frame, supSize);
+    int idSize = ((Integer) ast.FFC.E.visit(this, frame1)).intValue();
+    ast.FFC.D.entity = new KnownAddress(Machine.addressSize, frame1.level, frame1.size);
+    jumpAddr = nextInstrAddr;
+    emit(Machine.JUMPop, 0, Machine.CBr, 0);
+    loopAddr = nextInstrAddr;
+    ast.C.visit(this, new Frame(frame, supSize + idSize));
+    emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.succDisplacement);
+    patch(jumpAddr,nextInstrAddr);
+    emit(Machine.LOADop, supSize + idSize, Machine.LBr, frame.size);
+    emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.geDisplacement);
+    emit(Machine.JUMPIFop, Machine.trueRep, Machine.CBr, loopAddr);
+    emit(Machine.POPop, 0, 0, supSize + idSize);
+    return null;
   }
   
   public Object visitForLoopWhileCommand(ForLoopWhileCommand ast, Object o) {
-      return null;
+    Frame frame = (Frame) o;
+    int loopAddr, jumpAddr;
+    int supSize = ((Integer) ast.E1.visit(this, frame)).intValue();
+    Frame frame1 = new Frame(frame, supSize);
+    int idSize = ((Integer) ast.FFC.E.visit(this, frame1)).intValue();
+    ast.FFC.D.entity = new KnownAddress(Machine.addressSize, frame1.level, frame1.size);
+    jumpAddr = nextInstrAddr;
+    emit(Machine.JUMPop, 0, Machine.CBr, 0);
+    loopAddr = nextInstrAddr;
+    ast.C.visit(this, new Frame(frame, supSize + idSize));
+    emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.succDisplacement);
+    patch(jumpAddr,nextInstrAddr);
+    emit(Machine.LOADop, supSize + idSize, Machine.LBr, frame.size);
+    emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.geDisplacement);
+    ((Integer) ast.E2.visit(this, frame)).intValue();
+    emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.andDisplacement); 
+    emit(Machine.JUMPIFop, Machine.trueRep, Machine.CBr, loopAddr);
+    emit(Machine.POPop, 0, 0, supSize + idSize);
+    return null;
   }
   
   public Object visitForLoopUntilCommand(ForLoopUntilCommand ast, Object o) {
-      return null;
+ Frame frame = (Frame) o;
+    int loopAddr, jumpAddr;
+    int supSize = ((Integer) ast.E1.visit(this, frame)).intValue();
+    Frame frame1 = new Frame(frame, supSize);
+    int idSize = ((Integer) ast.FFC.E.visit(this, frame1)).intValue();
+    ast.FFC.D.entity = new KnownAddress(Machine.addressSize, frame1.level, frame1.size);
+    jumpAddr = nextInstrAddr;
+    emit(Machine.JUMPop, 0, Machine.CBr, 0);
+    loopAddr = nextInstrAddr;
+    ast.C.visit(this, new Frame(frame, supSize + idSize));
+    emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.succDisplacement);
+    patch(jumpAddr,nextInstrAddr);
+    emit(Machine.LOADop, supSize + idSize, Machine.LBr, frame.size);
+    emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.geDisplacement);
+    ((Integer) ast.E2.visit(this, frame)).intValue();
+    emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.notDisplacement); 
+    emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.andDisplacement); 
+    emit(Machine.JUMPIFop, Machine.trueRep, Machine.CBr, loopAddr);
+    emit(Machine.POPop, 0, 0, supSize + idSize);
+    return null;
   }
+  // END CAMBIO Joseph
   
   
   public Object visitFunction(Function ast, Object o) {
@@ -315,10 +369,10 @@ public final class Encoder implements Visitor {
       return null;
   }
   
-   // @author        Ignacio
-   // @descripcion   Implementación de visitVarExpDeclaration
-   // @funcionalidad Implementación de visitVarExpDeclaration
-   // @codigo        I.2
+  // @author        Ignacio
+  // @descripcion   Implementación de visitVarExpDeclaration
+  // @funcionalidad Implementación de visitVarExpDeclaration
+  // @codigo        I.2
   
   public Object visitVarExpDeclaration(VarExpDeclaration ast, Object o) {
     Frame frame = (Frame) o;
@@ -327,7 +381,7 @@ public final class Encoder implements Visitor {
     emit(Machine.PUSHop, 0, 0, extraSize);
     ast.entity = new KnownAddress(Machine.addressSize, frame.level, frame.size);
     
-    
+   
     Integer valSize = (Integer) ast.E.visit(this, frame);
     Identifier id = new Identifier(ast.I.spelling,ast.position);
     id.decl = ast;
@@ -336,8 +390,7 @@ public final class Encoder implements Visitor {
 
     SimpleVname vn = new SimpleVname(varn,ast.position);
     encodeStore(vn, new Frame (frame, valSize), valSize);
-    writeTableDetails(ast); 
-    
+    writeTableDetails(ast);  
     return extraSize;
   }
   
@@ -347,15 +400,25 @@ public final class Encoder implements Visitor {
       return null;
   }
   
+  // @author        Joseph
+  // @descripcion   Metodos encoder para declaraciones private
+  // @funcionalidad Metodo encoder para declaraciones private secuenciales
+  // @codigo        J.5
   public Object visitPrivDeclaration(PrivDeclaration ast, Object o) {
-      return null;
-  }
-      
-  public Object visitForFromCommand(ForFromCommand ast, Object o) {
-      return null;
-  }  
+    Frame frame = (Frame) o;
+    int extraSize1, extraSize2;
     
+    if(ast.packageEx != null){
+        ast.D1.packageEx = ast.packageEx;
+        ast.D2.packageEx = ast.packageEx;
+    }
+    extraSize1 = ((Integer) ast.D1.visit(this, frame)).intValue();
+    Frame frame1 = new Frame (frame, extraSize1);
+    extraSize2 = ((Integer) ast.D2.visit(this, frame1)).intValue();
+    return new Integer(extraSize1 + extraSize2);
+  }
   // END CAMBIO Joseph
+     
   
     // @author        Andres
     // @descripcion   Metodo encoder para visitar visitCaseLiterals
@@ -667,36 +730,16 @@ public final class Encoder implements Visitor {
     return new Integer(0);
   }
 
-   // @author        Joseph
-   // @descripcion   Cambio de var como alternativa de single-declaration
-   // @funcionalidad Cambio en las alternativas de single-declaration
-   // @codigo        J.45
-
-   public Object visitVarTDDeclaration(VarTDDeclaration ast, Object o) {
+  public Object visitVarTDDeclaration(VarTDDeclaration ast, Object o) {
        
-       Frame frame = (Frame) o;
-       int extraSize;
-       extraSize = ((Integer) ast.T.visit(this, null)).intValue();
-       emit(Machine.PUSHop, 0, 0, extraSize);
-       ast.entity = new KnownAddress(Machine.addressSize, frame.level, frame.size);
-       writeTableDetails(ast);
-       
-       return new Integer(extraSize);
-     }
-
-
-   /* J.45
-      public Object visitVarDeclaration(VarDeclaration ast, Object o) {
-       Frame frame = (Frame) o;
-       int extraSize;
-       extraSize = (Integer) ast.T.visit(this, null)).intValue();
-       emit(Machine.PUSHop, 0, 0, extraSize);
-       ast.entity = new KnownAddress(Machine.addressSize, frame.level, frame.size);
-       writeTableDetails(ast);
-       return new Integer(extraSize);
-     }
-    */
-  // END CAMBIO Joseph
+    Frame frame = (Frame) o;
+    int extraSize;
+    extraSize = ((Integer) ast.T.visit(this, null)).intValue();
+    emit(Machine.PUSHop, 0, 0, extraSize);
+    ast.entity = new KnownAddress(Machine.addressSize, frame.level, frame.size);
+    writeTableDetails(ast); 
+    return new Integer(extraSize);
+  }
 
   // Array Aggregates
   public Object visitMultipleArrayAggregate(MultipleArrayAggregate ast,
