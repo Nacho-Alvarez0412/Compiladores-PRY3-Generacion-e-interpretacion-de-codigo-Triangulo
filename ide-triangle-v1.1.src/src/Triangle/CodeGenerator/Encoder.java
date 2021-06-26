@@ -202,7 +202,7 @@ public final class Encoder implements Visitor {
     patch(jumpifAddr, nextInstrAddr);
     ast.C2.visit(this, frame);
     patch(jumpAddr, nextInstrAddr);
-    return null;
+    return valSize;
   }
 
   public Object visitLetCommand(LetCommand ast, Object o) {
@@ -214,7 +214,7 @@ public final class Encoder implements Visitor {
     return null;
   }
 
-  public Object visitSequentialCommand(SequentialCommand ast, Object o) {
+  public Object visitSequentialCommand(SequentialCommand ast, Object o) {    
     ast.C1.visit(this, o);
     ast.C2.visit(this, o);
     return null;
@@ -358,15 +358,29 @@ public final class Encoder implements Visitor {
   
   
   public Object visitFunction(Function ast, Object o) {
-      return null;
+      int extraSize = 0;
+      
+      extraSize += (Integer) ast.FPS.visit(this,o);
+      
+      if(ast.E.type != null){
+          extraSize += (Integer) ast.E.visit(this, o);
+      }
+      return extraSize;
   }
   
   public Object visitProcedure(Procedure ast, Object o) {
-      return null;
+      int extraSize = 0;
+      extraSize += (Integer) ast.FPS.visit(this, o);
+      ast.C.visit(this, o);
+      return extraSize;
   }
  
   public Object visitSequentialProcFuncs(SequentialProcFuncs ast, Object o) {
-      return null;
+      int extraSize = 0;
+      
+      extraSize += (Integer) ast.PF1.visit(this, o);
+      extraSize += (Integer) ast.PF2.visit(this, o);
+      return extraSize;
   }
   
   // @author        Ignacio
@@ -397,7 +411,7 @@ public final class Encoder implements Visitor {
   //END CAMBIO IGNACIO
   
   public Object visitRecDeclaration(RecDeclaration ast, Object o) {
-      return null;
+      return ast.PFs.visit(this, o);
   }
   
   // @author        Joseph
