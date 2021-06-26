@@ -395,7 +395,14 @@ public final class Encoder implements Visitor {
       Frame frame = (Frame) o;
       // Evaluate choose expresion
       Integer valSize = (Integer) ast.E.visit(this, frame);
-      ast.CS.visit(this, frame);
+      ArrayList<Integer> caseFinishAddrs = (ArrayList<Integer>) 
+                                                ast.CS.visit(this, frame);
+      // Patch jump addrs to each case when command finishes executing
+      caseFinishAddrs.stream().forEach((finishAddr) -> {
+          patch(finishAddr, nextInstrAddr);
+      });
+      // Clean stack
+      emit(Machine.POPop, 0, 0, valSize);
       return null;
     }
     // END cambio Andres
@@ -405,7 +412,10 @@ public final class Encoder implements Visitor {
     // @funcionalidad SimpleCases AST
     // @codigo        A.86
     public Object visitSimpleCases(SimpleCases ast, Object o) {
-        return null;
+        Frame frame = (Frame) o;
+        ArrayList<Integer> caseFinishAddrs = (ArrayList<Integer>) ast.C.visit(this, frame);
+        // TODO: Add halt execution if the choose never hits a case
+        return caseFinishAddrs;
     }
     // END Cambio Andres
     
@@ -414,7 +424,10 @@ public final class Encoder implements Visitor {
     // @funcionalidad CompoundCases AST
     // @codigo        A.84
     public Object visitCompoundCases(CompoundCases ast, Object o) {
-       return null;
+       Frame frame = (Frame) o;
+       ArrayList<Integer> caseFinishAddrs = (ArrayList<Integer>) ast.C.visit(this, frame);
+       ast.EC.visit(this, frame);
+       return caseFinishAddrs;
     }
     // END Cambio Andres
     
@@ -423,6 +436,8 @@ public final class Encoder implements Visitor {
     // @funcionalidad ElseCase AST
     // @codigo        A.83
     public Object visitElseCase(ElseCase ast, Object o) {
+        Frame frame = (Frame) o;
+        ast.C.visit(this, frame);
         return null;
     }
      // END Cambio Andres
@@ -432,7 +447,12 @@ public final class Encoder implements Visitor {
     // @funcionalidad SequentialCase AST
     // @codigo        A.85
     public Object visitSequentialCase(SequentialCase ast, Object o) {
-       return null;
+       Frame frame = (Frame) o;
+       ArrayList<Integer> case1Addrs = (ArrayList<Integer>) ast.C1.visit(this, frame);
+       ArrayList<Integer> case2Addrs = (ArrayList<Integer>) ast.C2.visit(this, frame);
+       case1Addrs.addAll(case2Addrs);
+       
+       return case1Addrs;
     }
      // END Cambio Andres
     
@@ -441,7 +461,28 @@ public final class Encoder implements Visitor {
     // @funcionalidad SingleCase AST
     // @codigo        A.87
     public Object visitSingleCase(SingleCase ast, Object o) {
-        return null;
+        Frame frame = (Frame) o;
+        int jumpToChooseEndAddr, jumpToNextWhenAddr;
+        ArrayList<Integer> jumpToCaseCommandAddr = (ArrayList<Integer>) ast.CL.visit(this, frame);
+        // JUMP to next when instruction
+        jumpToNextWhenAddr = nextInstrAddr;
+        emit(Machine.JUMPop, 0, Machine.CBr, 0);
+        // Point case addrs to the command of the when instruction
+        jumpToCaseCommandAddr.stream().forEach((caseCommandAddr) -> {
+            patch(caseCommandAddr, nextInstrAddr);
+        });
+        // When command
+        ast.C.visit(this, frame);
+        // JUMP to end of choose
+        jumpToChooseEndAddr = nextInstrAddr;
+        emit(Machine.JUMPop, 0, Machine.CBr, 0);
+        // Assign address of next when instruction
+        patch(jumpToNextWhenAddr, nextInstrAddr);
+        
+        ArrayList<Integer> jumpToEndAddrs = new ArrayList<>();
+        jumpToEndAddrs.add(jumpToChooseEndAddr);
+        
+        return jumpToEndAddrs;
     }
      // END Cambio Andres
   
@@ -450,7 +491,9 @@ public final class Encoder implements Visitor {
     // @funcionalidad AST visitCaseLiterals
     // @codigo        A.58
     public Object visitCaseLiterals(CaseLiterals ast, Object o) {
-        return null;
+        Frame frame = (Frame) o;
+        ArrayList<Integer> commandAddrs = (ArrayList<Integer>) ast.CR.visit(this, frame);
+        return commandAddrs;
     }
      // END Cambio Andres
  
@@ -459,7 +502,12 @@ public final class Encoder implements Visitor {
     // @funcionalidad AST SequentialCaseRange
     // @codigo        A.59
     public Object visitSequentialCaseRange(SequentialCaseRange ast, Object o) {
-        return null;
+       Frame frame = (Frame) o;
+       ArrayList<Integer> caseRange1Addrs = (ArrayList<Integer>) ast.CR1.visit(this, frame);
+       ArrayList<Integer> caseRange2Addrs = (ArrayList<Integer>) ast.CR2.visit(this, frame);
+       caseRange1Addrs.addAll(caseRange2Addrs);
+       
+       return caseRange1Addrs;
     }
     // END Cambio Andres
 
@@ -468,7 +516,20 @@ public final class Encoder implements Visitor {
     // @funcionalidad AST SimpleCaseRange
     // @codigo        A.43
     public Object visitSimpleCaseRange(SimpleCaseRange ast, Object o) {
-      return null;
+      Frame frame = (Frame) o;
+      
+      int jumpToWhenCommandAddr = nextInstrAddr;
+      // Check for case datatype
+      if (ast.CL.T instanceof IntegerLiteral) {
+        emit(Machine.CASEop, (int) ast.CL.visit(this, frame), Machine.CBr, 0);
+      } else if (ast.CL.T instanceof CharacterLiteral) {
+        emit(Machine.CASEop, (char) ast.CL.visit(this, frame), Machine.CBr, 0); 
+      }
+        
+      ArrayList<Integer> jumpToCommandAddr = new ArrayList<>();
+      jumpToCommandAddr.add(jumpToWhenCommandAddr);
+      
+      return jumpToCommandAddr;
     }
     // END cambio Andres
 
@@ -477,6 +538,8 @@ public final class Encoder implements Visitor {
     // @funcionalidad AST CompoundCaseRange
     // @codigo        A.44
     public Object visitCompoundCaseRange(CompoundCaseRange ast, Object o) {
+      
+        
       return null;
     }
     // END cambio Andres
@@ -487,7 +550,10 @@ public final class Encoder implements Visitor {
     // @funcionalidad AST CaseLiteral
     // @codigo        A.32
     public Object visitCaseLiteral(CaseLiteral ast, Object o) {
-      return null;
+      if (ast.T instanceof IntegerLiteral) {
+          return Integer.valueOf(ast.T.spelling);
+      }
+      return ast.T.spelling.charAt(1);
     }
     // END cambio Andres
 
