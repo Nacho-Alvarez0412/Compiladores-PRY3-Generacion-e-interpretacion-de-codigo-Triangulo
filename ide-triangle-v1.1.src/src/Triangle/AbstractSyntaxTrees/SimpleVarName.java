@@ -22,6 +22,10 @@ public class SimpleVarName extends VarName {
   public Object visit (Visitor v, Object o) {
     return v.visitSimpleVarName(this, o);
   }
+  
+  public Object visit2(Visitor v, Object o) {
+    return v.visitSimpleVarName2(this, o);
+  }
 
   public Object visitXML(Visitor v, Object o) {
     return v.visitSimpleVarName(this, o);
@@ -29,8 +33,4 @@ public class SimpleVarName extends VarName {
 
   public Identifier I;
 
-    @Override
-    public Object visit2(Visitor v, Object o) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 }
