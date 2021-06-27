@@ -1,0 +1,22 @@
+! Funciones mutuamente recursivas; posterior ve a anterior
+
+
+let
+
+  recursive
+
+    func f (a : Integer): Integer ~ 1
+
+    |
+
+    func g (b : Integer): Integer ~ if b > 0 then f(b - 1) else 0
+
+  end
+
+in
+
+  putint(f(10)) ;   ! imprime 1
+  putint(g(0))  ;   ! imprime 0
+  putint(20 * g(5)) ! imprime 20
+
+end

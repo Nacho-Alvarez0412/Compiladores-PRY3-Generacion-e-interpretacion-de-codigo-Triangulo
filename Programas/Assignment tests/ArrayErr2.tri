@@ -1,0 +1,12 @@
+let
+  var miArray : array 4 of Integer 
+
+in
+   miArray := [10, 20, 30, 40] ;
+
+   loop for i from 0 to 4 do
+   !imprime cuatro elementos y debe lanzar un error al tratar de acceder el elemento miArray[4]
+	putint(miArray[i]);
+	puteol()
+   end
+end 

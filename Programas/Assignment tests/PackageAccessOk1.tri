@@ -1,17 +1,13 @@
-
 package myP ~ 
-	var a:= 22;
-	var c:= 167
+	var a: Integer
 end;
 
 let
-	
-	var b : Integer
-
+	var b: Integer
 in
-	b := myP$a;
-	myP$c := 12;
-	putint(myP$c)
+      myP $ a := 100 ;
+	b := myP $ a;
+	putint(b + 1) ! debe imprimir 101
 
 end
 

@@ -1,0 +1,13 @@
+! OK: proc P llamado con argumento que es llamada a una func F, que devuelve un Integer. P espera parametro Integer.
+! Propósito: activar posible defecto latente en compilador de Triángulo original
+
+let
+  func F () : Integer ~ 1! la función devuelve siempre el entero 1
+ 
+  ;
+  proc P (x : Integer) ~ ! P espera paso por constante
+    putint (x * 2)
+  end
+in
+  P (F()) ! F es una función y su resultado es entero, imprime 2
+end

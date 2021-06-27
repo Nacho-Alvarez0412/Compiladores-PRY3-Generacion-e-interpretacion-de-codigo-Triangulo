@@ -1,0 +1,13 @@
+! Prueba de paridad o imparidad
+let
+  var x : Integer
+in
+  getint (var x);
+  if x // 2 = 0 then
+    put('P') ! imprime 'P' si el número ingresado es par
+  else
+    put('I') ! imprime 'I' si el número ingresado es impar
+  end
+  ;
+  puteol()
+end

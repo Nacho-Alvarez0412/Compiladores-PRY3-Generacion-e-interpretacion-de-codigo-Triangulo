@@ -1,0 +1,31 @@
+let 
+	var x := 8
+in
+	loop for i from 1 to 2 do
+		put('i');
+		put(' ');
+		putint(i);
+		puteol();
+		loop for j from 0 to i do
+			put('j');
+			put('*');
+			put('i');
+			put('=');
+			putint(j*i);
+			puteol()
+		end
+	end;
+	put('x');
+	put('=');
+	putint(x)
+end
+
+! Debe imprimir
+! i 1
+! j*i=0
+! j*i=1
+! i 2
+! j*i=0
+! j*i=2
+! j*i=4
+! x=8

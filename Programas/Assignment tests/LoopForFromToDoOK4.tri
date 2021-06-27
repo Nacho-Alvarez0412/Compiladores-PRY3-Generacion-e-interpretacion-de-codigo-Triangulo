@@ -1,0 +1,8 @@
+let
+  var miArr := [1,2,3,4]
+in
+  loop for i from 0 to 3 do
+    putint(miArr[i]); !debe imprimir 1 2 3 4  
+    puteol()
+  end
+end

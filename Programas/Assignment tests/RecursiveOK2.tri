@@ -1,0 +1,19 @@
+! Revisa el tipo de declaracion recursive - varias alternativas
+
+let
+
+recursive
+
+  proc a() ~ put('Z') end 
+  |
+  func b() : Integer ~ 5
+  |
+  proc c() ~ putint (999) end
+
+end
+
+in
+  a (); ! imprime Z
+  c (); ! imprime 999
+  putint(6 *b()) ! imprime 30
+end

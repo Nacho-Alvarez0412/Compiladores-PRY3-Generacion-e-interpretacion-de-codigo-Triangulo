@@ -1,0 +1,11 @@
+let
+
+  var a : Integer
+
+in
+  getint(var a) ;
+  a := a + 1 ;
+  putint (a)  ! imprime 1 más que  lo que se ingresó
+
+end
+

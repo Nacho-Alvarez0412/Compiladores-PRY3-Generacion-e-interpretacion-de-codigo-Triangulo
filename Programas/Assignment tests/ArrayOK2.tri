@@ -1,0 +1,11 @@
+let
+  var miArray : array 5 of Integer
+
+in
+   miArray := [10, 20, 30, 40, 50] ;
+   loop for i from 0 to 4 do
+   !imprime bien los cinco elementos
+	putint(miArray[i]);
+	puteol()
+   end
+end 

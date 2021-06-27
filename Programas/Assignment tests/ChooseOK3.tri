@@ -1,0 +1,7 @@
+choose 1 from
+
+  when 1 then putint (1) ! imprime 1 y termina bien
+
+  else putint (2)
+
+end

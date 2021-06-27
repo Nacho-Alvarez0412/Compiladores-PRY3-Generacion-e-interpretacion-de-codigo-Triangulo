@@ -1,0 +1,21 @@
+
+let
+
+  private
+    const a ~ 1
+  in
+
+    private
+      const b ~ a + 1 ! a visible aquí, b vale 2
+    in
+      const c ~ b + a ! c vale 3
+    end
+    ;
+    const d ~ a + c ! d vale 4
+  end
+
+in
+
+  putint(d) ! d visible aquí, imprimir 4
+
+end

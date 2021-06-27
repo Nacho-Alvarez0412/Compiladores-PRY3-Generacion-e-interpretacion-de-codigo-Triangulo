@@ -1,0 +1,16 @@
+let ! repetición nula
+
+  var k := 11 
+
+in
+
+  loop for i := k to 10 do ! determinar que k se evalúa una sola vez, al iniciar el ciclo
+  ! ciclo debe ser vacío (no ejecutar el cuerpo)
+
+    k := k + 1 ; 
+
+    putint (1) ! ejecución nula, no se imprime
+
+  end
+
+end
