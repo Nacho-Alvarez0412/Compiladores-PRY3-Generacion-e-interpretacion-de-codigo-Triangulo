@@ -88,10 +88,6 @@ import Triangle.AbstractSyntaxTrees.VarFormalParameter;
 import Triangle.AbstractSyntaxTrees.Visitor;
 import Triangle.AbstractSyntaxTrees.Vname;
 import Triangle.AbstractSyntaxTrees.VnameExpression;
-// @author        Joseph
-// @descripcion   Importacion de nuevos ASTs
-// @funcionalidad Parseo de nuevos ASTs
-// @codigo        J.13
 import Triangle.AbstractSyntaxTrees.VarTDDeclaration;
 import Triangle.AbstractSyntaxTrees.VarExpDeclaration;
 import Triangle.AbstractSyntaxTrees.WhileLoopCommand;
@@ -132,11 +128,6 @@ import Triangle.AbstractSyntaxTrees.SequentialPackageDeclaration;
 import Triangle.AbstractSyntaxTrees.SimpleProgram;
 import Triangle.AbstractSyntaxTrees.CompoundProgram;
 import Triangle.AbstractSyntaxTrees.VarName;
-/* J.13
-import Triangle.AbstractSyntaxTrees.WhileCommand;
-import Triangle.AbstractSyntaxTrees.VarDeclaration;
-*/
-// END CAMBIO Joseph
 public final class Encoder implements Visitor {
 
 
@@ -220,7 +211,11 @@ public final class Encoder implements Visitor {
     return null;
   }
 
-
+  // @author        Joseph
+  // @descripcion   Metodos encoder para comandos loop
+  // @funcionalidad Metodo encoder para comandos loop sin entrada asegurada
+  // @codigo        J.1
+  
   public Object visitWhileLoopCommand(WhileLoopCommand ast, Object o) {
     Frame frame = (Frame) o;
     int jumpAddr, loopAddr;
@@ -235,13 +230,6 @@ public final class Encoder implements Visitor {
     return null;
   }
   
-  
-  // New Loop ASTs
-  
-  // @author        Joseph
-  // @descripcion   Metodos encoder para comandos loop
-  // @funcionalidad Metodo encoder para Until loop
-  // @codigo        J.1
   public Object visitUntilLoopCommand(UntilLoopCommand ast, Object o) {
     Frame frame = (Frame) o;
     int jumpAddr, loopAddr;
@@ -282,21 +270,27 @@ public final class Encoder implements Visitor {
   }
   // END CAMBIO Joseph
   
-  public Object visitForFromCommand(ForFromCommand ast, Object o) {
-      return null;
-  }
+
 
   // @author        Joseph
   // @descripcion   Metodos encoder para comandos loop
   // @funcionalidad Metodo encoder para loops con variable de control
   // @codigo        J.3
+  
+    public Object visitForFromCommand(ForFromCommand ast, Object o) {
+      Frame frame = (Frame) o;
+      int idSize = ((Integer) ast.E.visit(this, frame)).intValue();
+      ast.D.entity = new KnownAddress(Machine.addressSize, frame.level, frame.size);
+      return idSize;
+  }
+  
+  
   public Object visitForLoopDoCommand(ForLoopDoCommand ast, Object o) {
     Frame frame = (Frame) o;
     int loopAddr, jumpAddr;
     int supSize = ((Integer) ast.E.visit(this, frame)).intValue();
     Frame frame1 = new Frame(frame, supSize);
-    int idSize = ((Integer) ast.FFC.E.visit(this, frame1)).intValue();
-    ast.FFC.D.entity = new KnownAddress(Machine.addressSize, frame1.level, frame1.size);
+    int idSize = ((Integer) ast.FFC.visit(this, frame1)).intValue();
     jumpAddr = nextInstrAddr;
     emit(Machine.JUMPop, 0, Machine.CBr, 0);
     loopAddr = nextInstrAddr;
@@ -537,10 +531,7 @@ public final class Encoder implements Visitor {
     return valSize;
   }
 
-   // @author        Joseph
-  // @descripcion   Cambio en metodo encoder para visitar CallExpression
-  // @funcionalidad Cambio en las alternativas de single-command
-  // @codigo        J.68
+
   public Object visitCallExpression(CallExpression ast, Object o) {
     Frame frame = (Frame) o;
     Integer valSize = (Integer) ast.type.visit(this, null);
@@ -548,16 +539,7 @@ public final class Encoder implements Visitor {
     ast.LI.visit(this, new Frame(frame.level, argsSize));
     return valSize;
   }
-  /*J.68
-   public Object visitCallExpression(CallExpression ast, Object o) {
-    Frame frame = (Frame) o;
-    Integer valSize = (Integer) ast.type.visit(this, null);
-    Integer argsSize = (Integer) ast.APS.visit(this, frame);
-    ast.I.visit(this, new Frame(frame.level, argsSize));
-    return valSize;
-  }
-  */
-  // END CAMBIO Joseph
+
 
   public Object visitCharacterExpression(CharacterExpression ast,
 						Object o) {
@@ -1124,7 +1106,6 @@ public final class Encoder implements Visitor {
   }
     
   public Object visitSinglePackageDeclaration(SinglePackageDeclaration ast, Object o) {
-      System.out.println("1");
     Frame frame = (Frame) o;
     ast.D.packageEx = ast.PI.I.spelling;
     int extraSize = ((Integer) ast.D.visit(this, frame)).intValue();
@@ -1191,10 +1172,6 @@ public final class Encoder implements Visitor {
   // Programs
   
   
-// @author        Andres
-// @descripcion   Agregar metodos de visita encoder de nuevos ASTs VarName, Vname y package
-// @funcionalidad metodos de visita encoder para AST de Varname, Vname y package
-// @codigo        A.139
   public Object visitSimpleProgram(SimpleProgram ast, Object o) {
       return ast.C.visit(this, o);
   }
@@ -1210,12 +1187,6 @@ public final class Encoder implements Visitor {
       return null;
       
   }
-  /*
-  public Object visitProgram(Program ast, Object o) {
-    return ast.C.visit(this, o);
-  }
-  */
-  // END CAMBIO Andres
 
   public Encoder (ErrorReporter reporter) {
     this.reporter = reporter;
