@@ -41,10 +41,21 @@ public class Interpreter {
     CT, CP, ST, HT, LB, status;
 
   // status values
+  // @author        Andres
+  // @descripcion   Nuevo estado de halt para choose command
+  // @funcionalidad Generacion de codigo para choose command
+  // @codigo        A.8
+  final static int
+    running = 0, halted = 1, failedDataStoreFull = 2, failedInvalidCodeAddress = 3,
+    failedInvalidInstruction = 4, failedOverflow = 5, failedZeroDivide = 6,
+    failedIOError = 7, unmatchedCase = 8;
+  /*
   final static int
     running = 0, halted = 1, failedDataStoreFull = 2, failedInvalidCodeAddress = 3,
     failedInvalidInstruction = 4, failedOverflow = 5, failedZeroDivide = 6,
     failedIOError = 7;
+  */
+  // END CAMBIO Andres
 
   static long
     accumulator;
@@ -206,6 +217,14 @@ public class Interpreter {
       case failedIOError:
         System.out.println("Program has failed due to an IO error.");
         break;
+      // @author        Andres
+      // @descripcion   Interpretacion del estado de halt para choose command
+      // @funcionalidad Generacion de codigo para choose command
+      // @codigo        A.9
+      case unmatchedCase:
+        System.out.println("Unmatched expression value in choose command.");
+        break;
+      // END CAMBIO Andres
     }
     if (status != halted)
       dump();
@@ -567,9 +586,43 @@ public class Interpreter {
           else
             CP = CP + 1;
           break;
+        // @author        Andres
+        // @descripcion   Operacion HALT nueva para choose command
+        // @funcionalidad Generacion de codigo para choose command
+        // @codigo        A.14
         case Machine.HALTop:
-          status = halted;
+          if (n == 8) status = unmatchedCase; 
+          else status = halted;
           break;
+        /*
+        case Machine.HALTop:
+            status = halted;
+           break;
+        */
+        // END CAMBIO Andres
+        // @author        Andres
+        // @descripcion   Ejecucion para las nuevas instrucciones CASE de TAM
+        // @funcionalidad Generacion de codigo para choose command
+        // @codigo        A.13
+        case Machine.CASEop:
+            if (data[ST - 1] == n)
+                CP = d + content(r);
+            else
+                CP = CP + 1;
+            break;
+        case Machine.CASEGEop:
+            if (data[ST - 1] >= n)
+               CP = d + content(r);
+           else
+               CP = CP + 1;
+           break;
+        case Machine.CASELEop:
+            if (data[ST - 1] <= n)
+               CP = d + content(r);
+           else
+               CP = CP + 1;
+           break;
+        // END CAMBIO Andres
       }
       if ((CP < CB) || (CP >= CT))
         status = failedInvalidCodeAddress;

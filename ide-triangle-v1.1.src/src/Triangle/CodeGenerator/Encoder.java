@@ -18,6 +18,7 @@ import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import TAM.Instruction;
 import TAM.Machine;
@@ -128,6 +129,13 @@ import Triangle.AbstractSyntaxTrees.SequentialPackageDeclaration;
 import Triangle.AbstractSyntaxTrees.SimpleProgram;
 import Triangle.AbstractSyntaxTrees.CompoundProgram;
 import Triangle.AbstractSyntaxTrees.VarName;
+
+/* J.13
+import Triangle.AbstractSyntaxTrees.WhileCommand;
+import Triangle.AbstractSyntaxTrees.VarDeclaration;
+*/
+// END CAMBIO Joseph
+
 public final class Encoder implements Visitor {
 
 
@@ -143,26 +151,82 @@ public final class Encoder implements Visitor {
   // @author        Andres
   // @descripcion   Metodo encoder para visitar CompoundIfCommand
   // @funcionalidad Cambio en las alternativas de single-command
-  // @codigo        A.22
+  // @codigo        A.5
   public Object visitCompoundIfCommand(CompoundIfCommand ast, Object o) {
-      return null;
+    Frame frame = (Frame) o;
+    int jumpifAddr, jumpAddr;
+    
+    // Evaluate if expression
+    Integer valSize = (Integer) ast.E.visit(this, frame);
+    jumpifAddr = nextInstrAddr;
+    // Jump to next elsif instruction
+    emit(Machine.JUMPIFop, Machine.falseRep, Machine.CBr, 0);
+    // Execute if command
+    ast.C1.visit(this, frame);
+    // Addr to jump to halt
+    jumpAddr = nextInstrAddr;
+    emit(Machine.JUMPop, 0, Machine.CBr, 0);
+    patch(jumpifAddr, nextInstrAddr);
+    // Point JUMP addr from if to the addr of the first elsif
+    Object elsifJumpAddrs = ast.EIC.visit(this, frame);
+    ast.C2.visit(this, frame);
+    // Point the jump address of the if to the next instruction
+    // after the if
+    patch(jumpAddr, nextInstrAddr);
+    // Check if single address or set of addresses
+    if (elsifJumpAddrs instanceof Integer) {
+        patch((Integer) elsifJumpAddrs, nextInstrAddr);
+    } else {
+        ArrayList<Integer> addrs = (ArrayList<Integer>) elsifJumpAddrs;
+        // Update the jumps of the elsifs
+        for (int addr : addrs) {
+            patch(addr, nextInstrAddr);
+        }
+    }
+  
+    return null;
   }
   
   // @author        Andres
   // @descripcion   Metodo encoder para visitar SingleElsifCommand
   // @funcionalidad AST SingleElsifCommand
-  // @codigo        A.16
+  // @codigo        A.6
   public Object visitSingleElsifCommand(SingleElsifCommand ast, Object o) {
-      return null;
+    Frame frame = (Frame) o;
+    int jumpifAddr, jumpAddr;
+    
+    Integer valSize = (Integer) ast.E.visit(this, frame);
+    jumpifAddr = nextInstrAddr;
+    emit(Machine.JUMPIFop, Machine.falseRep, Machine.CBr, 0);
+    ast.C.visit(this, frame);
+    jumpAddr = nextInstrAddr;
+    emit(Machine.JUMPop, 0, Machine.CBr, 0);
+    patch(jumpifAddr, nextInstrAddr);
+    
+    return jumpAddr;
   }
   // END cambio Andres
   
   // @author        Andres
   // @descripcion   Metodo encoder para visitar SequentialElsifCommand
   // @funcionalidad AST SequentialElsifCommand
-  // @codigo        A.17
+  // @codigo        A.7
   public Object visitSequentialElsifCommand(SequentialElsifCommand ast, Object o) {
-      return null;
+      Frame frame = (Frame) o;
+      ArrayList<Integer> jumpAddrs = new ArrayList<Integer>();
+      Object addrs = ast.SE1.visit(this, frame);
+      // Append an ArrayList of Integer if it is sequential
+      if (ast.SE1 instanceof SingleElsifCommand) {
+          int incomingAddr = (Integer) addrs;
+          jumpAddrs.add(incomingAddr);
+      } else if (ast.SE1 instanceof SequentialElsifCommand) {
+          ArrayList<Integer> addressArr = (ArrayList<Integer>) addrs;
+          jumpAddrs.addAll(addressArr);
+      }
+      int elsif2JumpAddr = (Integer) ast.SE2.visit(this, frame);
+      jumpAddrs.add(elsif2JumpAddr);
+      
+      return jumpAddrs;
   }
   // END cambio Andres
   
@@ -364,8 +428,8 @@ public final class Encoder implements Visitor {
   }
   
   // @author        Ignacio
-  // @descripcion   Implementación de visitVarExpDeclaration
-  // @funcionalidad Implementación de visitVarExpDeclaration
+  // @descripcion   Implementaciï¿½n de visitVarExpDeclaration
+  // @funcionalidad Implementaciï¿½n de visitVarExpDeclaration
   // @codigo        I.2
   
   public Object visitVarExpDeclaration(VarExpDeclaration ast, Object o) {
@@ -415,57 +479,48 @@ public final class Encoder implements Visitor {
      
   
     // @author        Andres
-    // @descripcion   Metodo encoder para visitar visitCaseLiterals
-    // @funcionalidad AST visitCaseLiterals
-    // @codigo        A.58
-    public Object visitCaseLiterals(CaseLiterals ast, Object o) {
-        return null;
-    }
-     // END Cambio Andres
- 
- // @author        Andres
     // @descripcion   Metodo encoder para visitar Choose command
     // @funcionalidad AST ChooseCommand
-    // @codigo        A.100
+    // @codigo        A.10
     public Object visitChooseCommand(ChooseCommand ast, Object o) {
+      Frame frame = (Frame) o;
+      // Evaluate choose expresion
+      Integer valSize = (Integer) ast.E.visit(this, frame);
+      ArrayList<Integer> caseFinishAddrs = (ArrayList<Integer>) 
+                                                ast.CS.visit(this, frame);
+      // Patch jump addrs to each case when command finishes executing
+      caseFinishAddrs.stream().forEach((finishAddr) -> {
+          patch(finishAddr, nextInstrAddr);
+      });
+      // Clean stack
+      emit(Machine.POPop, 0, 0, valSize);
       return null;
     }
     // END cambio Andres
-
-  // Cases
-  // @author        Andres
-  // @descripcion   Metodo encoder para visitar CaseLiteral
-  // @funcionalidad AST CaseLiteral
-  // @codigo        A.32
-  public Object visitCaseLiteral(CaseLiteral ast, Object o) {
-    return null;
-  }
-  // END cambio Andres
-
-  // @author        Andres
-  // @descripcion   Metodo encoder para visitar SimpleCaseRange
-  // @funcionalidad AST SimpleCaseRange
-  // @codigo        A.43
-  public Object visitSimpleCaseRange(SimpleCaseRange ast, Object o) {
-    return null;
-  }
-  // END cambio Andres
-
-  // @author        Andres
-  // @descripcion   Metodo encoder para visitar CompoundCaseRange
-  // @funcionalidad AST CompoundCaseRange
-  // @codigo        A.44
-  public Object visitCompoundCaseRange(CompoundCaseRange ast, Object o) {
-    return null;
-  }
-  // END cambio Andres
-
+    
     // @author        Andres
-    // @descripcion   Metodo encoder para visitar SequentialCaseRange
-    // @funcionalidad AST SequentialCaseRange
-    // @codigo        A.59
-    public Object visitSequentialCaseRange(SequentialCaseRange ast, Object o) {
-        return null;
+    // @descripcion   Metodos encoder para visitar ASTS nuevos
+    // @funcionalidad SimpleCases AST
+    // @codigo        A.86
+    public Object visitSimpleCases(SimpleCases ast, Object o) {
+        Frame frame = (Frame) o;
+        ArrayList<Integer> caseFinishAddrs = (ArrayList<Integer>) ast.C.visit(this, frame);
+        // HALT instruction in case of not entering a when instruction
+        emit(Machine.POPop, 0, 0, 1);
+        emit(Machine.HALTop, 8, 0, 0);
+        return caseFinishAddrs;
+    }
+    // END Cambio Andres
+    
+    // @author        Andres
+    // @descripcion   Metodos encoder para visitar ASTS nuevos
+    // @funcionalidad CompoundCases AST
+    // @codigo        A.84
+    public Object visitCompoundCases(CompoundCases ast, Object o) {
+       Frame frame = (Frame) o;
+       ArrayList<Integer> caseFinishAddrs = (ArrayList<Integer>) ast.C.visit(this, frame);
+       ast.EC.visit(this, frame);
+       return caseFinishAddrs;
     }
     // END Cambio Andres
     
@@ -474,16 +529,9 @@ public final class Encoder implements Visitor {
     // @funcionalidad ElseCase AST
     // @codigo        A.83
     public Object visitElseCase(ElseCase ast, Object o) {
+        Frame frame = (Frame) o;
+        ast.C.visit(this, frame);
         return null;
-    }
-     // END Cambio Andres
-    
-    // @author        Andres
-    // @descripcion   Metodos encoder para visitar ASTS nuevos
-    // @funcionalidad CompoundCases AST
-    // @codigo        A.84
-    public Object visitCompoundCases(CompoundCases ast, Object o) {
-       return null;
     }
      // END Cambio Andres
     
@@ -492,16 +540,12 @@ public final class Encoder implements Visitor {
     // @funcionalidad SequentialCase AST
     // @codigo        A.85
     public Object visitSequentialCase(SequentialCase ast, Object o) {
-       return null;
-    }
-     // END Cambio Andres
-    
-    // @author        Andres
-    // @descripcion   Metodos encoder para visitar ASTS nuevos
-    // @funcionalidad SimpleCases AST
-    // @codigo        A.86
-    public Object visitSimpleCases(SimpleCases ast, Object o) {
-        return null;
+       Frame frame = (Frame) o;
+       ArrayList<Integer> case1Addrs = (ArrayList<Integer>) ast.C1.visit(this, frame);
+       ArrayList<Integer> case2Addrs = (ArrayList<Integer>) ast.C2.visit(this, frame);
+       case1Addrs.addAll(case2Addrs);
+       
+       return case1Addrs;
     }
      // END Cambio Andres
     
@@ -510,9 +554,125 @@ public final class Encoder implements Visitor {
     // @funcionalidad SingleCase AST
     // @codigo        A.87
     public Object visitSingleCase(SingleCase ast, Object o) {
-        return null;
+        Frame frame = (Frame) o;
+        int jumpToChooseEndAddr, jumpToNextWhenAddr;
+        ArrayList<Integer> jumpToCaseCommandAddr = (ArrayList<Integer>) ast.CL.visit(this, frame);
+        // JUMP to next when instruction
+        jumpToNextWhenAddr = nextInstrAddr;
+        emit(Machine.JUMPop, 0, Machine.CBr, 0);
+        // Point case addrs to the command of the when instruction
+        jumpToCaseCommandAddr.stream().forEach((caseCommandAddr) -> {
+            patch(caseCommandAddr, nextInstrAddr);
+        });
+        // When command
+        ast.C.visit(this, frame);
+        // JUMP to end of choose
+        jumpToChooseEndAddr = nextInstrAddr;
+        emit(Machine.JUMPop, 0, Machine.CBr, 0);
+        // Assign address of next when instruction
+        patch(jumpToNextWhenAddr, nextInstrAddr);
+        
+        ArrayList<Integer> jumpToEndAddrs = new ArrayList<>();
+        jumpToEndAddrs.add(jumpToChooseEndAddr);
+        
+        return jumpToEndAddrs;
     }
      // END Cambio Andres
+  
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar visitCaseLiterals
+    // @funcionalidad AST visitCaseLiterals
+    // @codigo        A.58
+    public Object visitCaseLiterals(CaseLiterals ast, Object o) {
+        Frame frame = (Frame) o;
+        ArrayList<Integer> commandAddrs = (ArrayList<Integer>) ast.CR.visit(this, frame);
+        return commandAddrs;
+    }
+     // END Cambio Andres
+ 
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar SequentialCaseRange
+    // @funcionalidad AST SequentialCaseRange
+    // @codigo        A.59
+    public Object visitSequentialCaseRange(SequentialCaseRange ast, Object o) {
+       Frame frame = (Frame) o;
+       ArrayList<Integer> caseRange1Addrs = (ArrayList<Integer>) ast.CR1.visit(this, frame);
+       ArrayList<Integer> caseRange2Addrs = (ArrayList<Integer>) ast.CR2.visit(this, frame);
+       caseRange1Addrs.addAll(caseRange2Addrs);
+       
+       return caseRange1Addrs;
+    }
+    // END Cambio Andres
+
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar SimpleCaseRange
+    // @funcionalidad AST SimpleCaseRange
+    // @codigo        A.43
+    public Object visitSimpleCaseRange(SimpleCaseRange ast, Object o) {
+      Frame frame = (Frame) o;
+      
+      int jumpToWhenCommandAddr = nextInstrAddr;
+      // Check for case datatype
+      if (ast.CL.T instanceof IntegerLiteral) {
+        emit(Machine.CASEop, (int) ast.CL.visit(this, frame), Machine.CBr, 0);
+      } else if (ast.CL.T instanceof CharacterLiteral) {
+        emit(Machine.CASEop, (char) ast.CL.visit(this, frame), Machine.CBr, 0); 
+      }
+        
+      ArrayList<Integer> jumpToCommandAddr = new ArrayList<>();
+      jumpToCommandAddr.add(jumpToWhenCommandAddr);
+      
+      return jumpToCommandAddr;
+    }
+    // END cambio Andres
+
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar CompoundCaseRange
+    // @funcionalidad AST CompoundCaseRange
+    // @codigo        A.44
+    public Object visitCompoundCaseRange(CompoundCaseRange ast, Object o) {
+        Frame frame = (Frame) o;
+        
+        int jumpToWhenCommandAddr, jumpToNextCaseAddr, jumpToNextRangeComparison;
+
+        jumpToNextRangeComparison = nextInstrAddr;
+        if (ast.CL1.T instanceof IntegerLiteral) {
+            emit(Machine.CASEGEop, (int) ast.CL1.visit(this, frame), Machine.CBr, 0);
+        } else if (ast.CL1.T instanceof CharacterLiteral) {
+            emit(Machine.CASEGEop, (char) ast.CL1.visit(this, frame), Machine.CBr, 0);
+        }
+        // Jump to next case if first comparison is false
+        jumpToNextCaseAddr = nextInstrAddr;
+        emit(Machine.JUMPop, 0, Machine.CBr, 0);
+        patch(jumpToNextRangeComparison, nextInstrAddr);
+        // Next case range comparison
+        jumpToWhenCommandAddr = nextInstrAddr;
+        if (ast.CL2.T instanceof IntegerLiteral) {
+            emit(Machine.CASELEop, (int) ast.CL2.visit(this, frame), Machine.CBr, 0);
+        } else if (ast.CL2.T instanceof CharacterLiteral) {
+            emit(Machine.CASELEop, (char) ast.CL2.visit(this, frame), Machine.CBr, 0);
+        }
+        patch(jumpToNextCaseAddr, nextInstrAddr);
+        
+        ArrayList<Integer> jumpToCommandAddrs = new ArrayList<>();
+        jumpToCommandAddrs.add(jumpToWhenCommandAddr);
+        
+        return jumpToCommandAddrs;
+    }
+    // END cambio Andres
+
+    // Cases
+    // @author        Andres
+    // @descripcion   Metodo encoder para visitar CaseLiteral
+    // @funcionalidad AST CaseLiteral
+    // @codigo        A.32
+    public Object visitCaseLiteral(CaseLiteral ast, Object o) {
+      if (ast.T instanceof IntegerLiteral) {
+          return Integer.valueOf(ast.T.spelling);
+      }
+      return ast.T.spelling.charAt(1);
+    }
+    // END cambio Andres
 
   // Expressions
   public Object visitArrayExpression(ArrayExpression ast, Object o) {
@@ -579,8 +739,8 @@ public final class Encoder implements Visitor {
   }
   
   // @author        Ignacio
-  // @descripcion   Implementación Let Command
-  // @funcionalidad Implementación Let Command
+  // @descripcion   Implementaciï¿½n Let Command
+  // @funcionalidad Implementaciï¿½n Let Command
   // @codigo        I.3
 
   public Object visitLetExpression(LetExpression ast, Object o) {
@@ -1204,6 +1364,7 @@ public final class Encoder implements Visitor {
     //startCodeGeneration();
     theAST.visit(this, new Frame (0, 0));
     emit(Machine.HALTop, 0, 0, 0);
+    // END CAMBIO Andres
   }
 
   // Decides run-time representation of a standard constant.
