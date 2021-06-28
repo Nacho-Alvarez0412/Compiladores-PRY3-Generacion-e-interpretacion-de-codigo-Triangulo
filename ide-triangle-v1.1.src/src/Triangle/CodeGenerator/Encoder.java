@@ -130,12 +130,6 @@ import Triangle.AbstractSyntaxTrees.SimpleProgram;
 import Triangle.AbstractSyntaxTrees.CompoundProgram;
 import Triangle.AbstractSyntaxTrees.VarName;
 
-/* J.13
-import Triangle.AbstractSyntaxTrees.WhileCommand;
-import Triangle.AbstractSyntaxTrees.VarDeclaration;
-*/
-// END CAMBIO Joseph
-
 public final class Encoder implements Visitor {
 
 
@@ -414,6 +408,10 @@ public final class Encoder implements Visitor {
   }
   // END CAMBIO Joseph
   
+  // @author        Sebastian
+  // @descripcion   Validación de índices de arreglos
+  // @funcionalidad Índices 
+  // @codigo        S.2
   
   public Object visitFunction(Function ast, Object o) {
       int extraSize = 0;
@@ -440,6 +438,8 @@ public final class Encoder implements Visitor {
       extraSize += (Integer) ast.PF2.visit(this, o);
       return extraSize;
   }
+  
+  // END CAMBIO Sebastian
   
   // @author        Ignacio
   // @descripcion   Implementaciï¿½n de visitVarExpDeclaration
@@ -1223,10 +1223,6 @@ public final class Encoder implements Visitor {
 
   // Value-or-variable names
   
-    // @author        Andres
-    // @descripcion   Agregar metodos de visita encoder de nuevos ASTs VarName, Vname y package
-    // @funcionalidad metodos de visita encoder para AST de Varname, Vname y package
-    // @codigo        A.116
   public Object visitDotVarName(DotVarName ast, Object o) {
     Frame frame = (Frame) o;
     RuntimeEntity baseObject = (RuntimeEntity) ast.V.visit(this, frame);
@@ -1246,7 +1242,11 @@ public final class Encoder implements Visitor {
     int arraySize = (Integer) ast.I.decl.visit2(this, o);
     return arraySize;
   }
-
+  
+  // @author        Sebastian
+  // @descripcion   Validación de índices de arreglos
+  // @funcionalidad Índices 
+  // @codigo        S.1
   public Object visitSubscriptVarName(SubscriptVarName ast, Object o) {
     Frame frame = (Frame) o;
     RuntimeEntity baseObject;
@@ -1259,6 +1259,7 @@ public final class Encoder implements Visitor {
     elemSize = ((Integer) ast.type.visit(this, null)).intValue();
     if (ast.E instanceof IntegerExpression) {
       IntegerLiteral IL = ((IntegerExpression) ast.E).IL;
+      // Verificación de índice con expresión entera literal
       if(arraySize <= Integer.parseInt(IL.spelling) || Integer.parseInt(IL.spelling) < 0){
         emit(Machine.HALTop, 9, 0, 0);
       }
@@ -1268,6 +1269,7 @@ public final class Encoder implements Visitor {
       if (ast.indexed)
         frame.size = frame.size + Machine.integerSize;
       indexSize = ((Integer) ast.E.visit(this, frame)).intValue();
+      // Verificación de índice con expresión entera
       emit(Machine.LOADop, 1, Machine.STr, -1);
       emit(Machine.LOADLop, 0, 0, 0);
       emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.geDisplacement);
@@ -1282,6 +1284,7 @@ public final class Encoder implements Visitor {
       emit(Machine.JUMPIFop, Machine.trueRep, Machine.CBr, 0);
       emit(Machine.HALTop, 9, 0, 0);
       patch(jump2Addr, nextInstrAddr);
+      // Termina verificación de índice con expresión entera
       if (elemSize != 1) {
         emit(Machine.LOADLop, 0, 0, elemSize);
         emit(Machine.CALLop, Machine.SBr, Machine.PBr,
@@ -1294,6 +1297,9 @@ public final class Encoder implements Visitor {
     }
     return baseObject;
   }
+  // END CAMBIO Sebastian
+  
+  
   
   public Object visitSimpleVname(SimpleVname ast, Object o) {
       return ast.VN.visit(this, o);
