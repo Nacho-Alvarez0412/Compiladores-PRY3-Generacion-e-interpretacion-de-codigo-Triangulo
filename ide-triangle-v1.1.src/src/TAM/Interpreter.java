@@ -48,7 +48,7 @@ public class Interpreter {
   final static int
     running = 0, halted = 1, failedDataStoreFull = 2, failedInvalidCodeAddress = 3,
     failedInvalidInstruction = 4, failedOverflow = 5, failedZeroDivide = 6,
-    failedIOError = 7, unmatchedCase = 8;
+    failedIOError = 7, unmatchedCase = 8, indexError = 9;
   /*
   final static int
     running = 0, halted = 1, failedDataStoreFull = 2, failedInvalidCodeAddress = 3,
@@ -223,6 +223,9 @@ public class Interpreter {
       // @codigo        A.9
       case unmatchedCase:
         System.out.println("Unmatched expression value in choose command.");
+        break;
+      case indexError:
+        System.out.println("Array out of bounds.");
         break;
       // END CAMBIO Andres
     }
@@ -591,7 +594,8 @@ public class Interpreter {
         // @funcionalidad Generacion de codigo para choose command
         // @codigo        A.14
         case Machine.HALTop:
-          if (n == 8) status = unmatchedCase; 
+          if (n == 8) status = unmatchedCase;
+          else if (n == 9) status = indexError;
           else status = halted;
           break;
         /*

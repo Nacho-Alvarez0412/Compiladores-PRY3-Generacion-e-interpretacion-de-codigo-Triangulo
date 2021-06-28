@@ -903,6 +903,13 @@ public final class Encoder implements Visitor {
     size = ((Integer) ast.T.visit(this, null)).intValue();
     return new Integer(size);
   }
+  
+  public Object visitVarExpDeclaration2(VarExpDeclaration ast, Object o) {
+    Frame frame = (Frame) o;
+    int size;
+    size = ((Integer) ast.T.visit(this, null)).intValue();
+    return new Integer(size);
+  }
 
   // Array Aggregates
   public Object visitMultipleArrayAggregate(MultipleArrayAggregate ast,
@@ -1243,7 +1250,7 @@ public final class Encoder implements Visitor {
   public Object visitSubscriptVarName(SubscriptVarName ast, Object o) {
     Frame frame = (Frame) o;
     RuntimeEntity baseObject;
-    int elemSize, indexSize;
+    int elemSize, indexSize, jump1Addr, jump2Addr;
 
     baseObject = (RuntimeEntity) ast.V.visit(this, frame);
     int arraySize = (Integer) ast.V.visit2(this, o);
@@ -1252,8 +1259,8 @@ public final class Encoder implements Visitor {
     elemSize = ((Integer) ast.type.visit(this, null)).intValue();
     if (ast.E instanceof IntegerExpression) {
       IntegerLiteral IL = ((IntegerExpression) ast.E).IL;
-      if(arraySize <= Integer.parseInt(IL.spelling)){
-          reporter.reportError("Array out of bounds", ast.toString(), ast.position);
+      if(arraySize <= Integer.parseInt(IL.spelling) || Integer.parseInt(IL.spelling) < 0){
+        emit(Machine.HALTop, 9, 0, 0);
       }
       ast.offset = ast.offset + Integer.parseInt(IL.spelling) * elemSize;
     } else {
@@ -1261,6 +1268,20 @@ public final class Encoder implements Visitor {
       if (ast.indexed)
         frame.size = frame.size + Machine.integerSize;
       indexSize = ((Integer) ast.E.visit(this, frame)).intValue();
+      emit(Machine.LOADop, 1, Machine.STr, -1);
+      emit(Machine.LOADLop, 0, 0, 0);
+      emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.geDisplacement);
+      jump1Addr = nextInstrAddr;
+      emit(Machine.JUMPIFop, Machine.trueRep, Machine.CBr, 0);
+      emit(Machine.HALTop, 9, 0, 0);
+      patch(jump1Addr, nextInstrAddr);
+      emit(Machine.LOADop, 1, Machine.STr, -1);
+      emit(Machine.LOADLop, 0, 0, arraySize);
+      emit(Machine.CALLop, Machine.SBr, Machine.PBr, Machine.ltDisplacement);
+      jump2Addr = nextInstrAddr;
+      emit(Machine.JUMPIFop, Machine.trueRep, Machine.CBr, 0);
+      emit(Machine.HALTop, 9, 0, 0);
+      patch(jump2Addr, nextInstrAddr);
       if (elemSize != 1) {
         emit(Machine.LOADLop, 0, 0, elemSize);
         emit(Machine.CALLop, Machine.SBr, Machine.PBr,

@@ -209,4 +209,6 @@ public interface Visitor {
 
     public Object visitSimpleVarName2(SimpleVarName aThis, Object o);
 
+    public Object visitVarExpDeclaration2(VarExpDeclaration aThis, Object o);
+
 }

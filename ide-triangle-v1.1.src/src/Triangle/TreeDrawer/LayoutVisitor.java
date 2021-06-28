@@ -939,6 +939,11 @@ public class LayoutVisitor implements Visitor {
     }
 
     @Override
+    public Object visitVarExpDeclaration2(VarExpDeclaration aThis, Object o) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
     public Object visitSimpleVarName2(SimpleVarName aThis, Object o) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
