@@ -205,4 +205,8 @@ public interface Visitor {
   */
   // END Cambio Andres
 
+    public Object visitVarTDDeclaration2(VarTDDeclaration aThis, Object o);
+
+    public Object visitSimpleVarName2(SimpleVarName aThis, Object o);
+
 }

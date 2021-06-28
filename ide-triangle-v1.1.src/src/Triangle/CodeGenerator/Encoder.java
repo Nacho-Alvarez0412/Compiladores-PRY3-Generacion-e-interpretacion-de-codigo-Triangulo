@@ -257,7 +257,7 @@ public final class Encoder implements Visitor {
     patch(jumpifAddr, nextInstrAddr);
     ast.C2.visit(this, frame);
     patch(jumpAddr, nextInstrAddr);
-    return null;
+    return valSize;
   }
 
   public Object visitLetCommand(LetCommand ast, Object o) {
@@ -269,7 +269,7 @@ public final class Encoder implements Visitor {
     return null;
   }
 
-  public Object visitSequentialCommand(SequentialCommand ast, Object o) {
+  public Object visitSequentialCommand(SequentialCommand ast, Object o) {    
     ast.C1.visit(this, o);
     ast.C2.visit(this, o);
     return null;
@@ -416,15 +416,29 @@ public final class Encoder implements Visitor {
   
   
   public Object visitFunction(Function ast, Object o) {
-      return null;
+      int extraSize = 0;
+      
+      extraSize += (Integer) ast.FPS.visit(this,o);
+      
+      if(ast.E.type != null){
+          extraSize += (Integer) ast.E.visit(this, o);
+      }
+      return extraSize;
   }
   
   public Object visitProcedure(Procedure ast, Object o) {
-      return null;
+      int extraSize = 0;
+      extraSize += (Integer) ast.FPS.visit(this, o);
+      ast.C.visit(this, o);
+      return extraSize;
   }
  
   public Object visitSequentialProcFuncs(SequentialProcFuncs ast, Object o) {
-      return null;
+      int extraSize = 0;
+      
+      extraSize += (Integer) ast.PF1.visit(this, o);
+      extraSize += (Integer) ast.PF2.visit(this, o);
+      return extraSize;
   }
   
   // @author        Ignacio
@@ -455,7 +469,7 @@ public final class Encoder implements Visitor {
   //END CAMBIO IGNACIO
   
   public Object visitRecDeclaration(RecDeclaration ast, Object o) {
-      return null;
+      return ast.PFs.visit(this, o);
   }
   
   // @author        Joseph
@@ -882,6 +896,13 @@ public final class Encoder implements Visitor {
     writeTableDetails(ast); 
     return new Integer(extraSize);
   }
+  
+  public Object visitVarTDDeclaration2(VarTDDeclaration ast, Object o) {
+    Frame frame = (Frame) o;
+    int size;
+    size = ((Integer) ast.T.visit(this, null)).intValue();
+    return new Integer(size);
+  }
 
   // Array Aggregates
   public Object visitMultipleArrayAggregate(MultipleArrayAggregate ast,
@@ -1213,6 +1234,11 @@ public final class Encoder implements Visitor {
     ast.indexed = false;
     return ast.I.decl.entity;
   }
+  
+  public Object visitSimpleVarName2(SimpleVarName ast, Object o) {
+    int arraySize = (Integer) ast.I.decl.visit2(this, o);
+    return arraySize;
+  }
 
   public Object visitSubscriptVarName(SubscriptVarName ast, Object o) {
     Frame frame = (Frame) o;
@@ -1220,11 +1246,15 @@ public final class Encoder implements Visitor {
     int elemSize, indexSize;
 
     baseObject = (RuntimeEntity) ast.V.visit(this, frame);
+    int arraySize = (Integer) ast.V.visit2(this, o);
     ast.offset = ast.V.offset;
     ast.indexed = ast.V.indexed;
     elemSize = ((Integer) ast.type.visit(this, null)).intValue();
     if (ast.E instanceof IntegerExpression) {
       IntegerLiteral IL = ((IntegerExpression) ast.E).IL;
+      if(arraySize <= Integer.parseInt(IL.spelling)){
+          reporter.reportError("Array out of bounds", ast.toString(), ast.position);
+      }
       ast.offset = ast.offset + Integer.parseInt(IL.spelling) * elemSize;
     } else {
       // v-name is indexed by a proper expression, not a literal
